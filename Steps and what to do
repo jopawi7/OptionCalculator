@@ -2,11 +2,11 @@ A. General Objective
   Build an Option Calculator that replicates the one linked in the instructions, with the additional requirements and constraints below.
  
 B. Functional Content (what the program must handle)
-  B1. Support European and American options (as in the original calculator).
+  B1. Support European and American options (as in the original calculator). <- Victor
   B2. Add two additional option types, chosen from:
-     • Asian
-     • Binary
-     • Barrier
+     • Asian <- Yun
+     • Binary <- Emilien
+     • Barrier < Didac
   B3. When no closed-form formula exists, use the Black–Scholes model for the evolution of the underlying asset price.
   B4. For Monte Carlo simulations:
      • The number of simulations must be a model parameter.
