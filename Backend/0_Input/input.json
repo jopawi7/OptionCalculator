@@ -1,0 +1,13 @@
+{
+  "type": "call",
+  "exercise_style": "european",
+  "start_date": "2025-10-30",
+  "start_time": "09:30",
+  "expiration_date": "2025-11-15",
+  "expiration_time": "16:00",
+  "strike": 180,
+  "stock_price": 175.20,
+  "volatility": 0.28,
+  "interest_rate": 0.045,
+  "dividend_yield": 0.0125
+}
