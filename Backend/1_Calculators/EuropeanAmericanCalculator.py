@@ -1,7 +1,12 @@
-### EUROPEAN CALCULATOR:
-
 import scipy.stats as si
 import numpy as np
+
+# ---------------------------------------------------------
+# Filename: EuropeanAmericanCalculator.py
+# Author:
+# Created: 2025-10-30
+# Description:
+# ---------------------------------------------------------
 
 
 def calculateOptionValue(data):
