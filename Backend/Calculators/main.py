@@ -1,9 +1,11 @@
 import json
 import os
-from . import EuropeanAmericanCalculator
-from . import AsianCalculator
-from . import BinaryCalculator
-from . import BarrierCalculator
+from Calculators.EuropeanAmericanCalculator import calculateOptionValue as calcOptionEA
+from Calculators.AsianCalculator import calculateOptionValue as calcOptionAsian
+from Calculators.BinaryCalculator import calculateOptionValue as calcOptionBinary
+from Calculators.BarrierCalculator import calculateOptionValue as calcOptionBarrier
+
+
 
 # ---------------------------------------------------------
 # Filename: main.py
@@ -44,13 +46,13 @@ def calculate_option():
 
     match input_obj['exercise_style'].lower():
         case "european" | "american":
-            output_obj = EuropeanAmericanCalculator.calculateOptionValue(input_obj)
+            output_obj = calcOptionEA(input_obj)
         case "asian":
-            output_obj = AsianCalculator.calculateOptionValue(input_obj)
+            output_obj = calcOptionAsia(input_obj)
         case "binary":
-            output_obj = BinaryCalculator.calculateOptionValue(input_obj)
+            output_obj = calcOptionBinary(input_obj)
         case "barrier":
-            output_obj = BarrierCalculator.calculateOptionValue(input_obj)
+            output_obj = calcOptionBarrier(input_obj)
         case _:
             raise ValueError("Invalid exercise style")
 

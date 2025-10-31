@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-from Calculators.main import calculate_option
-from Calculators import *
+from Calculators.main import calculate_option  # oder was du sonst brauchst
 
 # ---------------------------------------------------------
 # Filename: server.py
