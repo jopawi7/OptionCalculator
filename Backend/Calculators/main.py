@@ -1,8 +1,8 @@
 import json
-import EuropeanAmericanCalculator as EuropeanAmericanCalculator
-import AsianCalculator as AsianCalculator
-import BinaryCalculator as BinaryCalculator
-import BarrierCalculator as BarrierCalculator
+import  EuropeanAmericanCalculator
+import  AsianCalculator
+import  BinaryCalculator
+import  BarrierCalculator
 
 # ---------------------------------------------------------
 # Filename: main.py
