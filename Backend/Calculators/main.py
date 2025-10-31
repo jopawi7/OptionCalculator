@@ -55,7 +55,7 @@ def calculate_option():
         case "european" | "american":
             output_obj = calcOptionEA(input_obj)
         case "asian":
-            output_obj = calcOptionAsia(input_obj)
+            output_obj = calcOptionAsian(input_obj)
         case "binary":
             output_obj = calcOptionBinary(input_obj)
         case "barrier":
