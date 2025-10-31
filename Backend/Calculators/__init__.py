@@ -1,1 +1,1 @@
-#signalizes that folder is package
+#signalizes that folder is package <- nothing to be done
