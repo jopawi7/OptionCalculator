@@ -24,6 +24,7 @@ async def root():
     return {"message": "Hello World"}
 
 
+#Wird aktuell nicht benutzt, steht aber ganz nett da :)
 @app.put("/calculate/")
 async def update_item():
     #Schreibe in Input

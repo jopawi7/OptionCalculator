@@ -1,11 +1,18 @@
 import json
 import os
-from Calculators.EuropeanAmericanCalculator import calculateOptionValue as calcOptionEA
-from Calculators.AsianCalculator import calculateOptionValue as calcOptionAsian
-from Calculators.BinaryCalculator import calculateOptionValue as calcOptionBinary
-from Calculators.BarrierCalculator import calculateOptionValue as calcOptionBarrier
 
-
+try:
+    # Für Package-Ausführung durch FastAPI
+    from Calculators.EuropeanAmericanCalculator import calculateOptionValue as calcOptionEA
+    from Calculators.AsianCalculator import calculateOptionValue as calcOptionAsian
+    from Calculators.BinaryCalculator import calculateOptionValue as calcOptionBinary
+    from Calculators.BarrierCalculator import calculateOptionValue as calcOptionBarrier
+except ImportError:
+    # Fallback DirekterDateistart
+    from EuropeanAmericanCalculator import calculateOptionValue as calcOptionEA
+    from AsianCalculator import calculateOptionValue as calcOptionAsian
+    from BinaryCalculator import calculateOptionValue as calcOptionBinary
+    from BarrierCalculator import calculateOptionValue as calcOptionBarrier
 
 # ---------------------------------------------------------
 # Filename: main.py
