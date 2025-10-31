@@ -1,8 +1,9 @@
 import json
-import  EuropeanAmericanCalculator
-import  AsianCalculator
-import  BinaryCalculator
-import  BarrierCalculator
+import os
+from . import EuropeanAmericanCalculator
+from . import AsianCalculator
+from . import BinaryCalculator
+from . import BarrierCalculator
 
 # ---------------------------------------------------------
 # Filename: main.py
@@ -16,8 +17,12 @@ def calculate_option():
     print("Option calculation starts...")
     print("")
 
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    input_path = os.path.join(dir_path, '..', 'Input', 'input.json')
+    output_path = os.path.join(dir_path, '..', 'Output', 'output.json')
+
     # Path to Input in input.json... :)
-    with open('../Input/input.json', 'r') as f:
+    with open(input_path, 'r') as f:
         input_obj = json.load(f)
 
     # How to call the Variables
@@ -65,7 +70,7 @@ def calculate_option():
 
     # Safe the output
     try:
-        with open('../Output/output.json', "w") as f:
+        with open(output_path, "w") as f:
             json.dump(output_obj, f, indent=2)
         print(f"Results successfully written to: output.json")
     except Exception as e:

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from Calculators.main import calculate_option
+from Calculators import *
 
 # ---------------------------------------------------------
 # Filename: server.py
@@ -25,6 +26,15 @@ async def root():
 
 
 @app.put("/calculate/")
+async def update_item():
+    #Schreibe in Input
+    output_obj = calculate_option()
+    #Nehme aus Outpu
+    return output_obj
+
+
+#To test with browser
+@app.get("/calculate/")
 async def update_item():
     #Schreibe in Input
     output_obj = calculate_option()
