@@ -48,16 +48,16 @@ def calculateOptionWithData(input_obj):
     #calculteOptionWithData without input output logic
     match input_obj['exercise_style'].lower():
         case "european" | "american":
-            from Calculators.EuropeanAmericanCalculator import calculateOptionValue as calcOptionEA
+            from Calculators.EuropeanAmericanCalculator import calculate_option_value as calcOptionEA
             return calcOptionEA(input_obj)
         case "asian":
-            from Calculators.AsianCalculator import calculateOptionValue as calcOptionAsian
+            from Calculators.AsianCalculator import calculate_option_value as calcOptionAsian
             return calcOptionAsian(input_obj)
         case "binary":
-            from Calculators.BinaryCalculator import calculateOptionValue as calcOptionBinary
+            from Calculators.BinaryCalculator import calculate_option_value as calcOptionBinary
             return calcOptionBinary(input_obj)
         case "barrier":
-            from Calculators.BarrierCalculator import calculateOptionValue as calcOptionBarrier
+            from Calculators.BarrierCalculator import calculate_option_value as calcOptionBarrier
             return calcOptionBarrier(input_obj)
         case _:
             raise ValueError("Invalid exercise style")
