@@ -1,1 +1,52 @@
-/* You can add global styles to this file, and also import other style files */
+/* generiert mit generativer KI */
+
+:root {
+  --bg: #0e0f10;            /* tiefes anthrazit */
+  --bg-soft: #141618;
+  --ivory: #f5f1e9;         /* ivory white */
+  --beige: #e8dcc7;         /* champagne sand */
+  --pale-gold: #d8c9a6;     /* pale gold accents */
+  --slate: #5d6368;         /* slate grey */
+  --muted: #a39a8a;
+  --shadow: 0 10px 40px rgba(0,0,0,.4);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  overflow-y: auto;
+  height: 100%;
+  margin: 0;
+  background: radial-gradient(1200px 800px at 70% 10%, #17191b 0%, var(--bg) 55%, #0a0b0c 100%);
+  color: var(--ivory);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "SF Pro Display", "SF Pro Text", Arial, sans-serif;
+}
+
+a { color: var(--pale-gold); text-decoration: none; }
+
+.button {
+  display: inline-flex; align-items: center; gap:.6rem;
+  padding: .8rem 1.1rem; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(232,220,199,.15), rgba(216,201,166,.08));
+  border: 1px solid rgba(216,201,166,.35);
+  color: var(--ivory);
+  box-shadow: var(--shadow);
+  transition: transform .25s ease, background .25s ease, border-color .25s ease;
+  will-change: transform;
+}
+.button:hover { transform: translateY(-2px); border-color: rgba(216,201,166,.6); }
+
+.code {
+  padding: 1rem 1.2rem; border-radius: 14px;
+  background: linear-gradient(180deg, #16181a, #121314);
+  border: 1px solid rgba(216,201,166,.18);
+  color: var(--beige);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  overflow: auto;
+}
+
+@media print {
+  body { background: white; color: black; }
+  .deck, .slide { box-shadow: none !important; }
+  .progress, .hud { display: none !important; }
+}
