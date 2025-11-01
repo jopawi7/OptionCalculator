@@ -34,19 +34,6 @@ def calculate_option():
     with open(input_path, 'r') as f:
         input_obj = json.load(f)
 
-    # How to call the Variables
-    # print("Input data loaded successfully!")
-    # print(f"Option type: {input_obj['type']}")
-    # print(f"Exercise style: {input_obj['exercise_style']}")
-    # print(f"Start date: {input_obj['start_date']}")
-    # print(f"Start time: {input_obj['start_time']}")
-    # print(f"Expiration date: {input_obj['expiration_date']}")
-    # print(f"Expiration time: {input_obj['expiration_time']}")
-    # print(f"Strike: {input_obj['strike']}")
-    # print(f"Stock price: {input_obj['stock_price']}")
-    # print(f"Volatility: {input_obj['volatility']}")
-    # print(f"Interest rate: {input_obj['interest_rate']}")
-    # print(f"Dividend yield: {input_obj['dividend_yield']}")
 
     # Select the corresponding calculator and calculate results and put into output.json
     output_obj = None
@@ -69,7 +56,6 @@ def calculate_option():
     else:
         print("")
         print("----- Result Summary -----")
-        print(f"Symbol: {output_obj.get('symbol', 'N/A')}")
         print(f"Theoretical Price: {output_obj.get('theoretical_price', 'N/A')}")
         print(f"Delta: {output_obj.get('delta', 'N/A')}")
         print(f"Gamma: {output_obj.get('gamma', 'N/A')}")

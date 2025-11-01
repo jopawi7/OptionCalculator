@@ -27,11 +27,11 @@ def calculateOptionValue(data):
     print(f"Stock price: {data['stock_price']}")
     print(f"Volatility: {data['volatility']}")
     print(f"Interest rate: {data['interest_rate']}")
-    print(f"Dividend yield: {data['dividend_yield']}")
+    print(f"dividens: {data['dividends']}" )
 
     # TODO: Logic to calculate OptionValue here or method to calculate option value
 
     return {
-        "symbol": "placeholder", "theoretical_price": round(price, 4), "delta": round(delta, 4),
+         "theoretical_price": round(price, 4), "delta": round(delta, 4),
         "gamma": round(gamma, 6), "rho": round(rho, 4), "theta": round(theta, 4), "vega": round(vega, 4)
     }

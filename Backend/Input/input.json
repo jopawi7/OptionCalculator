@@ -4,10 +4,13 @@
   "start_date": "2025-10-30",
   "start_time": "09:30",
   "expiration_date": "2025-11-15",
-  "expiration_time": "16:00",
+  "expiration_time": "AM",
   "strike": 180,
-  "stock_price": 175.20,
+  "stock_price": 175.2,
   "volatility": 0.28,
   "interest_rate": 0.045,
-  "dividend_yield": 0.0125
+  "dividends": [
+    { "date": "2025-11-20", "amount": 0.0 },
+    { "date": "2025-11-21", "amount": 0.0 }
+  ]
 }

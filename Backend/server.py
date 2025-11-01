@@ -1,5 +1,8 @@
 from fastapi import FastAPI
-from Calculators.main import calculate_option  # oder was du sonst brauchst
+from Calculators.main import calculate_option
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
+
 
 # ---------------------------------------------------------
 # Filename: server.py
@@ -19,24 +22,42 @@ from Calculators.main import calculate_option  # oder was du sonst brauchst
 
 app = FastAPI()
 
+#Add CORSE Middleware so that Angular has access to backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 
-#Wird aktuell nicht benutzt, steht aber ganz nett da :)
-@app.put("/calculate/")
-async def update_item():
-    #Schreibe in Input
-    output_obj = calculate_option()
-    #Nehme aus Outpu
+#Post Endpoint for the calculatoon
+@app.post("/calculate/")
+async def calculate(input_data: dict):
+    # Speichere Input temporär oder übergebe direkt
+    output_obj = calculateOptionWithData(input_data)
     return output_obj
 
 
-#To test with browser
-@app.get("/calculate/")
-async def update_item():
-    #Schreibe in Input
-    output_obj = calculate_option()
-    #Nehme aus Outpu
-    return output_obj
+def calculateOptionWithData(input_obj):
+    #calculteOptionWithData without input output logic
+    match input_obj['exercise_style'].lower():
+        case "european" | "american":
+            from Calculators.EuropeanAmericanCalculator import calculateOptionValue as calcOptionEA
+            return calcOptionEA(input_obj)
+        case "asian":
+            from Calculators.AsianCalculator import calculateOptionValue as calcOptionAsian
+            return calcOptionAsian(input_obj)
+        case "binary":
+            from Calculators.BinaryCalculator import calculateOptionValue as calcOptionBinary
+            return calcOptionBinary(input_obj)
+        case "barrier":
+            from Calculators.BarrierCalculator import calculateOptionValue as calcOptionBarrier
+            return calcOptionBarrier(input_obj)
+        case _:
+            raise ValueError("Invalid exercise style")
