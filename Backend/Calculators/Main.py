@@ -3,16 +3,16 @@ import os
 
 try:
     # Für Package-Ausführung durch FastAPI
-    from Calculators.EuropeanAmericanCalculator import calculateOptionValue as calcOptionEA
-    from Calculators.AsianCalculator import calculateOptionValue as calcOptionAsian
-    from Calculators.BinaryCalculator import calculateOptionValue as calcOptionBinary
-    from Calculators.BarrierCalculator import calculateOptionValue as calcOptionBarrier
+    from Calculators.EuropeanAmericanCalculator import calculate_option_value as calcOptionEA
+    from Calculators.AsianCalculator import calculate_option_value as calcOptionAsian
+    from Calculators.BinaryCalculator import calculate_option_value as calcOptionBinary
+    from Calculators.BarrierCalculator import calculate_option_value as calcOptionBarrier
 except ImportError:
     # Fallback DirekterDateistart
-    from EuropeanAmericanCalculator import calculateOptionValue as calcOptionEA
-    from AsianCalculator import calculateOptionValue as calcOptionAsian
-    from BinaryCalculator import calculateOptionValue as calcOptionBinary
-    from BarrierCalculator import calculateOptionValue as calcOptionBarrier
+    from EuropeanAmericanCalculator import calculate_option_value as calcOptionEA
+    from AsianCalculator import calculate_option_value as calcOptionAsian
+    from BinaryCalculator import calculate_option_value as calcOptionBinary
+    from BarrierCalculator import calculate_option_value as calcOptionBarrier
 
 # ---------------------------------------------------------
 # Filename: Main.py

@@ -6,7 +6,7 @@
 # Description:
 # ---------------------------------------------------------
 
-def calculateOptionValue(data):
+def calculate_option_value(data):
     # Expected Output values
     price = 0
     delta = 0

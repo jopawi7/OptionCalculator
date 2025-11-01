@@ -9,7 +9,7 @@ import numpy as np
 # ---------------------------------------------------------
 
 
-def calculateOptionValue(data):
+def calculate_option_value(data):
     #Expected Output values
     price = 1
     delta = 0
