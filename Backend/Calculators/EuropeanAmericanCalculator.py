@@ -40,8 +40,6 @@ def calculateOptionValue(data):
     }
 
 
-
-
 def BS(S, K, T, r, sigma, option):
     
     #S: spot price

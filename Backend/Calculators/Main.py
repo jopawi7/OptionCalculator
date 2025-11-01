@@ -15,7 +15,7 @@ except ImportError:
     from BarrierCalculator import calculateOptionValue as calcOptionBarrier
 
 # ---------------------------------------------------------
-# Filename: main.py
+# Filename: Main.py
 # Author: Jonas Patrick Witzel
 # Created: 2025-10-30
 # Description: Reads input.json, Calculates the Corresponding results, Writes it into output.json
@@ -37,6 +37,9 @@ def calculate_option():
 
     # Select the corresponding calculator and calculate results and put into output.json
     output_obj = None
+
+    #TODO - value Validation for all variables
+    #TODO - eventuell input output abfrage
 
     match input_obj['exercise_style'].lower():
         case "european" | "american":

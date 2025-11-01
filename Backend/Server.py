@@ -1,11 +1,11 @@
 from fastapi import FastAPI
-from Calculators.main import calculate_option
+from Calculators.Main import calculate_option
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
 
 # ---------------------------------------------------------
-# Filename: server.py
+# Filename: Server.py
 # Author: Jonas Patrick Witzel
 # Created: 2025-10-31
 # Description: Use FastAPI() to connect Frontend with Backend
