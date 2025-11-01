@@ -1,13 +1,110 @@
+<!-- @author: Jonas Patrick Witzel -->
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Frontend</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-</head>
-<body>
-  <app-root></app-root>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title> Option Calculator </title>
+    <base href="/" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#e8dcc7" />
+    <meta name="description" content="Option Calculator: A visionary options calculator that transforms complexity into clarity." />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg" href="assets/logo.svg" />
+    <link rel="apple-touch-icon" href="assets/logo.svg" />
+
+    <!-- Fonts import - preconnenct optimizes loading - early connection to google font-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@500&display=swap" rel="stylesheet" />
+
+    <!-- Style css direct in index.html such that it loads before the rest loads -->
+    <style>
+      :root {
+        --bg: #0e0f10;
+        --ivory: #f5f1e9;
+        --beige: #e8dcc7;
+        --pale-gold: #d8c9a6;
+        --slate: #5d6368;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: radial-gradient(1000px 600px at 70% 0%, #17191b 0%, var(--bg) 60%, #0a0b0c 100%);
+        color: var(--ivory);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow: hidden;
+      }
+
+      /* Loading screen before Angular Mount */
+      .loader {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--beige);
+        letter-spacing: 0.05em;
+      }
+
+      /* Fancy circle */
+      .loader .circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, var(--beige), var(--pale-gold));
+        position: relative;
+        margin-bottom: 1rem;
+        animation: pulse 2.5s ease-in-out infinite;
+      }
+
+      /* Horizontal line circle */
+      .loader .circle::after {
+        content: '';
+        position: absolute;
+        left: 15%;
+        right: 15%;
+        top: 49%;
+        height: 2px;
+        background: rgba(0,0,0,0.35);
+      }
+
+      /* Animation circle */
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+      }
+
+      /* h1 loading page */
+      .loader h1 {
+        font-size: 1.6rem;
+        margin: 0.5rem 0 0;
+        font-family: 'Playfair Display', serif;
+      }
+
+      /* p loading page */
+      .loader p {
+        font-size: 0.9rem;
+        color: var(--pale-gold);
+        margin-top: 0.25rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Angular mount point -->
+    <app-root>
+      <!-- Shown while Angular bootstraps -->
+      <div class="loader">
+        <div class="circle"></div>
+        <h1>Option Calculator</h1>
+        <p>Loading brilliance...</p>
+      </div>
+    </app-root>
+  </body>
 </html>
