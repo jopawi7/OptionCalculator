@@ -17,9 +17,6 @@ from starlette.middleware.cors import CORSMiddleware
 # 3) uvicorn server:app --reload
 # 4) die API läuft unter dem angezeigten link
 
-
-#Denke beim Drücken auf Caluculate Option daran, das an die input.json weiterzuleiten
-
 app = FastAPI()
 
 #Add CORSE Middleware so that Angular has access to backend
