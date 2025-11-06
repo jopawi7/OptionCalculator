@@ -23,7 +23,7 @@ except ImportError:
 
 
 def calculate_option():
-    print("Option calculation starts...")
+    print("Hi, welcome to our Option Calculator! ")
     print("")
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
