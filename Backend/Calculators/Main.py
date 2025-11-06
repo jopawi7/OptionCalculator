@@ -40,6 +40,7 @@ def calculate_option():
 
     #TODO - value Validation for all variables
     #TODO - eventuell input output abfrage
+    #TODO - Robustness Checks
 
     match input_obj['exercise_style'].lower():
         case "european" | "american":
