@@ -56,7 +56,14 @@ def calculate_option_value(data):
     K = data["strike"]
     sigma = data["volatility"]
     r = data["interest_rate"]
-    q = data["dividends"]
+    
+    # Normalize dividends
+    dividends = data.get("dividends", 0.0)
+    if isinstance(dividends, list):
+        q = sum(d.get("amount", 0.0) for d in dividends) / len(dividends) if dividends else 0.0
+    else:
+        q = float(dividends) if dividends else 0.0
+    
     Q = 1.0
 
     fmt = "%Y-%m-%d"
@@ -107,8 +114,8 @@ def calculate_option_value(data):
 
 
 if __name__ == "__main__":
-    print("\nBinary Option Calculator loaded")
-    choice = input("Use file input? (y/n): ").strip().lower()
+    print("\nBinary Option Calculator")
+    choice = input("Use JSON file input? (y/n): ").strip().lower()
 
     if choice == "y":
         try:
@@ -130,7 +137,7 @@ if __name__ == "__main__":
             "dividends": float(input("Dividend yield (decimal, e.g. 0.00): ")),
         }
 
-    print("\nRESULT :")
+    print("\nRESULT")
     try:
         result = calculate_option_value(data)
         for k, v in result.items():
