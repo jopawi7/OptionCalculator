@@ -57,9 +57,9 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
 
     if avg_type == "geometric":
         if div_schedule and q == 0.0:
-            print("[AVISO] Hay dividendos discretos pero no se ha proporcionado 'dividend_yield (q)'. "
-                  "La fórmula cerrada geométrica con discretos no es exacta. "
-                  "Considera usar q (rendimiento por dividendos) o usar Monte Carlo.")
+            print("[NOTICE] There are discrete dividends but no 'dividend_yield (q)' has been provided."
+                  "The closed-form geometric formula with discrete dividends is not exact." 
+                  "Consider using q (dividend yield) or using Monte Carlo.")
        
         price = _asian_geom_closed_form_price(S0, K, r, q, sigma, T, n_fix, is_call=is_call)
 
