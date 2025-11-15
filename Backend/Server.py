@@ -1,7 +1,10 @@
 from fastapi import FastAPI
-from Calculators.Main import calculate_option
-from starlette.middleware import Middleware
+
 from starlette.middleware.cors import CORSMiddleware
+from Calculators.AmericanCalculator import calculate_option_value as calcOptionAmerican
+from Calculators.AsianCalculator import calculate_option_value as calcOptionAsian
+from Calculators.BinaryCalculator import calculate_option_value as calcOptionBinary
+from Calculators.EuropeanCalculator import calculate_option_value as calcOptionEuropean
 
 
 # ---------------------------------------------------------
@@ -44,17 +47,13 @@ async def calculate(input_data: dict):
 def calculateOptionWithData(input_obj):
     #calculteOptionWithData without input output logic
     match input_obj['exercise_style'].lower():
-        case "european" | "american":
-            from Calculators.EuropeanAmericanCalculator import calculate_option_value as calcOptionEA
-            return calcOptionEA(input_obj)
+        case  "american":
+            return calcOptionAmerican(input_obj)
         case "asian":
-            from Calculators.AsianCalculator import calculate_option_value as calcOptionAsian
             return calcOptionAsian(input_obj)
         case "binary":
-            from Calculators.BinaryCalculator import calculate_option_value as calcOptionBinary
             return calcOptionBinary(input_obj)
-        case "barrier":
-            from Calculators.BarrierCalculator import calculate_option_value as calcOptionBarrier
-            return calcOptionBarrier(input_obj)
+        case "european":
+            return calcOptionEuropean(input_obj)
         case _:
             raise ValueError("Invalid exercise style")

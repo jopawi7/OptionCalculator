@@ -1,22 +1,13 @@
 import json
 import os
-
-try:
-    # Für Package-Ausführung durch FastAPI
-    from Calculators.EuropeanAmericanCalculator import calculate_option_value as calcOptionEA
-    from Calculators.AsianCalculator import calculate_option_value as calcOptionAsian
-    from Calculators.BinaryCalculator import calculate_option_value as calcOptionBinary
-    from Calculators.BarrierCalculator import calculate_option_value as calcOptionBarrier
-except ImportError:
-    # Fallback DirekterDateistart
-    from EuropeanAmericanCalculator import calculate_option_value as calcOptionEA
-    from AsianCalculator import calculate_option_value as calcOptionAsian
-    from BinaryCalculator import calculate_option_value as calcOptionBinary
-    from BarrierCalculator import calculate_option_value as calcOptionBarrier
+from AmericanCalculator import calculate_option_value as calcOptionAmerican
+from AsianCalculator import calculate_option_value as calcOptionAsian
+from BinaryCalculator import calculate_option_value as calcOptionBinary
+from EuropeanCalculator import calculate_option_value as calcOptionEuropean
 
 # ---------------------------------------------------------
 # Filename: Main.py
-# Author: Jonas Patrick Witzel
+# Author:
 # Created: 2025-10-30
 # Description: Reads input.json, Calculates the Corresponding results, Writes it into output.json
 # ---------------------------------------------------------
@@ -43,18 +34,18 @@ def calculate_option():
     #TODO - Robustness Checks
 
     match input_obj['exercise_style'].lower():
-        case "european" | "american":
-            output_obj = calcOptionEA(input_obj)
+        case "american":
+            output_obj = calcOptionAmerican(input_obj)
         case "asian":
             output_obj = calcOptionAsian(input_obj)
         case "binary":
             output_obj = calcOptionBinary(input_obj)
-        case "barrier":
-            output_obj = calcOptionBarrier(input_obj)
+        case "european":
+            output_obj = calcOptionEuropean(input_obj)
         case _:
             raise ValueError("Invalid exercise style")
 
-    # Print Results from Calulation
+    # Print Results from Calculation
     if output_obj is None:
         print("Something went wrong!")
     else:
