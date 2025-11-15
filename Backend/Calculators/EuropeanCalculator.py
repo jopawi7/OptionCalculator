@@ -73,14 +73,29 @@ def calculate_option_value(data):
     div = data.get("dividends", data.get("dividens", 0.0))
     if isinstance(div, list):
         q = 0.0
-        S = S0 - _pv_dividends(div, start_dt, exp_dt, r)
+        S = max(S0 - _pv_dividends(div, start_dt, exp_dt, r), 1e-12)
     else:
         q = float(div)
         S = S0
 
     # Black–Scholes core
     if T <= 0 or sigma <= 0:
-        return {"theoretical_price": 0, "delta": 0, "gamma": 0, "rho": 0, "theta": 0, "vega": 0}
+        # Discounted intrinsic via forward-carry
+        df_r, df_q = np.exp(-r * T), np.exp(-q * T)
+        S_fwd = S * df_q
+        K_df = K * df_r
+        if opt_type == "call":
+            price = max(S_fwd - K_df, 0.0)
+        else:
+            price = max(K_df - S_fwd, 0.0)
+        return {
+            "theoretical_price": round(price, 3),
+            "delta": 0.0,
+            "gamma": 0.0,
+            "rho": 0.0,
+            "theta": 0.0,
+            "vega": 0.0,
+        }
 
     d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
