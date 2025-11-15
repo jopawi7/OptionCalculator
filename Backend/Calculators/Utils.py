@@ -8,12 +8,16 @@ from math import exp, sqrt, log, erf, pi
 # Description: Some util functions that are needed for several calculations
 # ---------------------------------------------------------
 
-def yearfrac(start_dt, end_dt):
-    """Actual/365 year fraction."""
+def calculate_year_fraction(start_dt, end_dt):
+    """
+    Calculates the fraction of a year between two dates using the Actual/365 convention.
+    """
     return max((end_dt - start_dt).total_seconds() / (365 * 24 * 3600), 0.0)
 
-def normalize_rate(x):
-    """Treat 1.5 as 1.5%."""
+def normalize_interest_rate(x):
+    """
+    Treats an input value like 1.5 as 1.5%, converting it to a decimal (0.015) if above 1; leaves values ≤ 1 unchanged.
+    """
     x = float(x)
     return x / 100.0 if x > 1 else x
 
@@ -76,7 +80,7 @@ def calculate_present_value_dividends(dividend_list, start_date, expiry_date, ri
 
         #Sum over present values
         if start_date < pay_date < expiry_date:
-            T = yearfrac(start_date, pay_date)
+            T = calculate_year_fraction(start_date, pay_date)
             present_value += float(single_dividend["amount"]) * np.exp(-risk_free_rate * T)
 
     return present_value
@@ -85,19 +89,19 @@ def calculate_present_value_dividends(dividend_list, start_date, expiry_date, ri
 
 
 
-def calculate_time_to_maturity(start_dt, start_time, exp_dt, exp_time):
-    """Calculate time to maturity in years."""
-    start_dt = datetime.combine(
-        datetime.strptime(start_dt, "%Y-%m-%d").date(),
+def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time):
+    """Calculate time to maturity in years based on start_date, start_time, expire_date, expire_time."""
+    start_date = datetime.combine(
+        datetime.strptime(start_date, "%Y-%m-%d").date(),
         parse_time_string(start_time)
     )
 
-    exp_dt = datetime.combine(
-        datetime.strptime(exp_dt, "%Y-%m-%d").date(),
-        parse_time_string(exp_time)
+    expire_date = datetime.combine(
+        datetime.strptime(expire_date, "%Y-%m-%d").date(),
+        parse_time_string(expire_time)
     )
 
-    return yearfrac(start_dt, exp_dt)
+    return calculate_year_fraction(start_date, expire_date)
 
 
 
