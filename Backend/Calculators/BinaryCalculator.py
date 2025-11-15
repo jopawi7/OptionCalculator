@@ -104,12 +104,12 @@ def calculate_option_value(data):
         )
 
     return {
-        "theoretical_price": round(price, 10),
-        "delta": round(delta, 10),
-        "gamma": round(gamma, 10),
-        "rho": round(rho, 10),
-        "theta": round(theta, 10),
-        "vega": round(vega, 10),
+        "theoretical_price": round(price, 3),
+        "delta": round(delta, 3),
+        "gamma": round(gamma, 3),
+        "rho": round(rho, 3),
+        "theta": round(theta, 3),
+        "vega": round(vega, 3),
     }
 
 

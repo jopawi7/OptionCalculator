@@ -64,7 +64,19 @@ def _american_binomial_calculation(stock_price, strike_price, risk_free_rate, di
 
 
 def calculate_option_value(data):
-    # Inputs
+    """
+    Calculates the option value for an American using a binomial tree.
+      Used in:
+          - AmericanCalcluator
+
+      Args:
+          data: JSON-Object with all necessary data for the calculation.
+
+      Returns:
+          data: JSON-Object with the calculated values for the option.
+      """
+
+    # Parse Input to useable variables
     opt_type = data["type"].lower()
     is_call = opt_type == "call"
     S0 = float(data["stock_price"])
@@ -81,7 +93,7 @@ def calculate_option_value(data):
     div = data.get("dividends", data.get("dividens", 0.0))
     if isinstance(div, list):
         q = 0.0
-        S = max(S0 - pv_dividends(div, start_dt, exp_dt, r), 1e-12)
+        S = max(S0 - calculate_present_value_dividends(div, data["start_date"], data["expiration_date"], r), 1e-12)
     else:
         q = float(div)
         S = S0

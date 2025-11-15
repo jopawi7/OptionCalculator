@@ -29,7 +29,10 @@ def calculate_option_value(data):
     risk_free_rate = normalize_rate(data["interest_rate"])
 
     #StockPrice and Dividends - reduces stock price by present value of expected discrete dividends
-    stock_price = max(float(data["stock_price"]) - pv_dividends(data.get("dividends"), data["start_date"], data["expiration_date"],risk_free_rate), 1e-12)
+    stock_price = max(float(data["stock_price"]) - calculate_present_value_dividends(data.get("dividends", []),
+                                                                                     data["start_date"],
+                                                                                     data["expiration_date"],
+                                                                                     risk_free_rate), 1e-12)
 
     sigma = float(data["volatility"])
     time_to_maturity = calculate_time_to_maturity(data["start_date"], data.get("start_time"), data["expiration_date"], data.get("expiration_time"))
