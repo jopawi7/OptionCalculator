@@ -8,7 +8,7 @@ To test our project there exists two possibilites:
 
 # Backend - FastAPI
 1) Go in the Backend directory 
-2) start uvicorn server:app --reload
+2) uvicorn server:app --reload
 
 # Frontend - Angular
 1) Go in the Frontend directory

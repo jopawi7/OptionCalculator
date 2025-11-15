@@ -92,13 +92,13 @@ def calculate_option_value(data):
     gamma = (discount_factor_dividend_yield * nd1) / (stock_price * sigma * sqrt_time_to_maturity)
     vega  = stock_price * discount_factor_dividend_yield * nd1 * sqrt_time_to_maturity
 
-   # Round result to three decimal places and return it to main.py
+
+    #Round result to three decimal places and return it to main.py
     #Delta: How much option price changes when the underlying stock price moves by one unit (calls positve, puts negative)
     #Gamma: Indicates how much delta itself changes when the underlying stock price moves by one unit
     #Theta: The rate at which the option price decreases as time passes ("time decay").
     #Rho: Shows how much the option price changes if the risk-free interest rate increases by one percentage point
     #Vega: Measures how much the option price changes if volatility of the underlying asset increases by one percentage point.
-
 
     result = {
         "theoretical_price": round(float(price), 3),

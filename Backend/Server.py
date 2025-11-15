@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from starlette.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 from starlette.middleware.cors import CORSMiddleware
 from Calculators.AmericanCalculator import calculate_option_value as calcOptionAmerican
@@ -23,6 +26,25 @@ from Calculators.EuropeanCalculator import calculate_option_value as calcOptionE
 app = FastAPI()
 
 #Add CORSE Middleware so that Angular has access to backend
+class Dividend(BaseModel):
+    date: str
+    amount: float
+
+class OptionInput(BaseModel):
+    type: str
+    exercise_style: str = Field(..., alias='style')
+    start_date: str
+    start_time: str
+    expiration_date: str
+    expiration_time: str
+    strike: float
+    stock_price: float
+    volatility: float
+    interest_rate: float
+    dividends: Optional[List[Dividend]] = []
+
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
@@ -35,19 +57,18 @@ app.add_middleware(
 async def root():
     return {"message": "Hello World"}
 
-
-#Post Endpoint for the calculatoon
 @app.post("/calculate/")
-async def calculate(input_data: dict):
-    # Speichere Input temporär oder übergebe direkt
-    output_obj = calculateOptionWithData(input_data)
-    return output_obj
-
+async def calculate(input_data: OptionInput):
+    try:
+        output_obj = calculateOptionWithData(input_data.dict())
+        return output_obj
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 def calculateOptionWithData(input_obj):
-    #calculteOptionWithData without input output logic
-    match input_obj['exercise_style'].lower():
-        case  "american":
+    exercise_style = input_obj.get('exercise_style', '').lower()
+    match exercise_style:
+        case "american":
             return calcOptionAmerican(input_obj)
         case "asian":
             return calcOptionAsian(input_obj)
@@ -56,4 +77,4 @@ def calculateOptionWithData(input_obj):
         case "european":
             return calcOptionEuropean(input_obj)
         case _:
-            raise ValueError("Invalid exercise style")
+            raise ValueError(f"Invalid exercise style: {input_obj.get('exercise_style')}")
