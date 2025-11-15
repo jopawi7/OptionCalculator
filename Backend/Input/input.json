@@ -1,11 +1,11 @@
 {
   "type": "call",
-  "exercise_style": "european",
+  "exercise_style": "american",
   "start_date": "2025-11-15",
   "start_time": "17:22:34",
   "expiration_date": "2026-04-30",
   "expiration_time": "AM",
-  "strike": 180,
+  "strike": 100,
   "stock_price": 100,
   "volatility": 0.20,
   "interest_rate": 1.5,

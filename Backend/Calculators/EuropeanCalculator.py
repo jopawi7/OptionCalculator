@@ -1,141 +1,119 @@
-import scipy.stats as si
 import numpy as np
+import scipy.stats as si
 from datetime import datetime, time
 
-# ---------------------------------------------------------
-# Filename: EuropeanCalculator.py
-# Author:
-# Created: 2025-10-30
-# Description: European option pricer (Black–Scholes) with automatic unit handling
-# ---------------------------------------------------------
-
-
+# ---- Helpers (wie gehabt) ----------------------------------------------------
 def _parse_time_flexible(tstr):
-    """Handles 'HH:MM', 'HH:MM:SS', or 'AM'/'PM'."""
     if not tstr:
         return time(0, 0)
-    tstr = str(tstr).strip().upper()
-    if tstr in {"AM"}:
-        return time(0, 0)
-    if tstr in {"PM"}:
-        return time(12, 0)
-    for fmt in ["%H:%M", "%H:%M:%S", "%I:%M %p", "%I %p"]:
+    s = str(tstr).strip().upper()
+    if s == "AM":  return time(0, 0)
+    if s == "PM":  return time(12, 0)
+    for fmt in ("%H:%M", "%H:%M:%S", "%I:%M %p", "%I %p"):
         try:
-            return datetime.strptime(tstr, fmt).time()
+            return datetime.strptime(s, fmt).time()
         except ValueError:
-            continue
+            pass
     return time(0, 0)
 
-
-def _yearfrac(start_dt, end_dt):
-    """Actual/365 year fraction."""
-    return max((end_dt - start_dt).total_seconds() / (365 * 24 * 3600), 0.0)
-
+def _yearfrac(a: datetime, b: datetime) -> float:
+    return max((b - a).total_seconds() / (365.0 * 24 * 3600), 0.0)
 
 def _normalize_rate(x):
-    """Treat 1.5 as 1.5%."""
     x = float(x)
-    return x / 100.0 if x > 1 else x
-
+    return x/100.0 if x > 1.0 else x
 
 def _pv_dividends(div_list, start_dt, exp_dt, r):
-    """PV of discrete dividends before expiry."""
     if not isinstance(div_list, list):
         return 0.0
     pv = 0.0
     for d in div_list:
-        pay_date = datetime.strptime(d["date"], "%Y-%m-%d")
-        if start_dt < pay_date < exp_dt:
-            T = _yearfrac(start_dt, pay_date)
+        pay = datetime.strptime(d["date"], "%Y-%m-%d")
+        if start_dt < pay < exp_dt:
+            T = _yearfrac(start_dt, pay)
             pv += float(d["amount"]) * np.exp(-r * T)
     return pv
 
-
+# ---- Black-Scholes (EUROPEAN) -----------------------------------------------
 def calculate_option_value(data):
-    # Extract and normalize
-    opt_type = data["type"].lower()
+    # Inputs
+    opt_type = str(data["type"]).strip().lower()
     S0 = float(data["stock_price"])
-    K = float(data["strike"])
-    sigma = float(data["volatility"])
-    r = _normalize_rate(data["interest_rate"])
+    K  = float(data["strike"])
+    sig = float(data["volatility"])
+    r   = _normalize_rate(data["interest_rate"])
 
     start_dt = datetime.combine(
         datetime.strptime(data["start_date"], "%Y-%m-%d").date(),
-        _parse_time_flexible(data.get("start_time")),
+        _parse_time_flexible(data.get("start_time"))
     )
     exp_dt = datetime.combine(
         datetime.strptime(data["expiration_date"], "%Y-%m-%d").date(),
-        _parse_time_flexible(data.get("expiration_time")),
+        _parse_time_flexible(data.get("expiration_time"))
     )
     T = _yearfrac(start_dt, exp_dt)
 
-    # Handle dividends (continuous or discrete)
+    # Dividenden
     div = data.get("dividends", data.get("dividens", 0.0))
     if isinstance(div, list):
-        q = 0.0
         S = max(S0 - _pv_dividends(div, start_dt, exp_dt, r), 1e-12)
+        q = 0.0
     else:
-        q = float(div)
         S = S0
+        q = float(div)
 
-    # Black–Scholes core
-    if T <= 0 or sigma <= 0:
-        # Discounted intrinsic via forward-carry
-        df_r, df_q = np.exp(-r * T), np.exp(-q * T)
-        S_fwd = S * df_q
-        K_df = K * df_r
+    # Grenzfälle
+    if T <= 0.0 or sig <= 0.0 or S <= 0.0 or K <= 0.0:
+        df_r = np.exp(-r*T)
+        df_q = np.exp(-q*T)
         if opt_type == "call":
-            price = max(S_fwd - K_df, 0.0)
+            price = max(S*df_q - K*df_r, 0.0)
+        elif opt_type == "put":
+            price = max(K*df_r - S*df_q, 0.0)
         else:
-            price = max(K_df - S_fwd, 0.0)
+            raise ValueError("type must be 'call' or 'put'")
         return {
-            "theoretical_price": round(price, 3),
+            "theoretical_price": round(float(price), 3),
             "delta": 0.0,
             "gamma": 0.0,
             "rho": 0.0,
             "theta": 0.0,
-            "vega": 0.0,
+            "vega": 0.0
         }
 
-    d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
+    # Black-Scholes Berechnung
+    sqrtT = np.sqrt(T)
+    d1 = (np.log(S/K) + (r - q + 0.5*sig*sig)*T) / (sig*sqrtT)
+    d2 = d1 - sig*sqrtT
     Nd1, Nd2 = si.norm.cdf(d1), si.norm.cdf(d2)
     nd1 = si.norm.pdf(d1)
-
-    df_r, df_q = np.exp(-r * T), np.exp(-q * T)
+    df_r = np.exp(-r*T)
+    df_q = np.exp(-q*T)
 
     if opt_type == "call":
-        price = S * df_q * Nd1 - K * df_r * Nd2
-        delta = df_q * Nd1
-        theta = (
-            -S * df_q * nd1 * sigma / (2 * np.sqrt(T))
-            - r * K * df_r * Nd2
-            + q * S * df_q * Nd1
-        )
-        rho = K * T * df_r * Nd2
+        price = S*df_q*Nd1 - K*df_r*Nd2
+        delta = df_q*Nd1
+        theta = -(S*df_q*nd1*sig)/(2*sqrtT) - r*K*df_r*Nd2 + q*S*df_q*Nd1
+        rho   = K*T*df_r*Nd2
+    elif opt_type == "put":
+        Nmd1, Nmd2 = si.norm.cdf(-d1), si.norm.cdf(-d2)
+        price = K*df_r*Nmd2 - S*df_q*Nmd1
+        delta = df_q*(Nd1 - 1.0)
+        theta = -(S*df_q*nd1*sig)/(2*sqrtT) + r*K*df_r*Nmd2 - q*S*df_q*Nmd1
+        rho   = -K*T*df_r*Nmd2
     else:
-        price = K * df_r * si.norm.cdf(-d2) - S * df_q * si.norm.cdf(-d1)
-        delta = df_q * (Nd1 - 1)
-        theta = (
-            -S * df_q * nd1 * sigma / (2 * np.sqrt(T))
-            + r * K * df_r * si.norm.cdf(-d2)
-            - q * S * df_q * si.norm.cdf(-d1)
-        )
-        rho = -K * T * df_r * si.norm.cdf(-d2)
+        raise ValueError("type must be 'call' or 'put'")
 
-    gamma = df_q * nd1 / (S * sigma * np.sqrt(T))
-    vega = S * df_q * nd1 * np.sqrt(T)
+    gamma = (df_q*nd1)/(S*sig*sqrtT)
+    vega  = S*df_q*nd1*sqrtT
 
-    # Convert to standard "per 1% change" outputs (as in most option calculators)
-    vega_pct = vega / 100.0       # per +1% vol
-    rho_pct = rho / 100.0         # per +1% rate
-    theta_per_day = theta / 365.0 # per day
-
-    return {
-        "theoretical_price": round(price, 3),
-        "delta": round(delta, 3),
-        "gamma": round(gamma, 3),
-        "rho": round(rho_pct, 3),
-        "theta": round(theta_per_day, 3),
-        "vega": round(vega_pct, 3),
+    # Greeks OHNE Skalierung - raw values
+    out = {
+        "theoretical_price": round(float(price), 3),
+        "delta": round(float(delta), 3),
+        "gamma": round(float(gamma), 3),
+        "rho": round(float(rho), 3),
+        "theta": round(float(theta), 3),
+        "vega": round(float(vega), 3),
     }
+    return out
