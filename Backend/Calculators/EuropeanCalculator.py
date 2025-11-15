@@ -1,40 +1,14 @@
 import numpy as np
 import scipy.stats as si
-from datetime import datetime, time
+from datetime import datetime
+from Utils import *
 
-# ---- Helpers (wie gehabt) ----------------------------------------------------
-def _parse_time_flexible(tstr):
-    if not tstr:
-        return time(0, 0)
-    s = str(tstr).strip().upper()
-    if s == "AM":  return time(0, 0)
-    if s == "PM":  return time(12, 0)
-    for fmt in ("%H:%M", "%H:%M:%S", "%I:%M %p", "%I %p"):
-        try:
-            return datetime.strptime(s, fmt).time()
-        except ValueError:
-            pass
-    return time(0, 0)
+# ---------------------------------------------------------
+# Filename: EuropeanCalculator.py
+# LastUpdated: 2025-11-15
+# Description: Calculate the value of European otpions based on Black-Scholes
+# ---------------------------------------------------------
 
-def _yearfrac(a: datetime, b: datetime) -> float:
-    return max((b - a).total_seconds() / (365.0 * 24 * 3600), 0.0)
-
-def _normalize_rate(x):
-    x = float(x)
-    return x/100.0 if x > 1.0 else x
-
-def _pv_dividends(div_list, start_dt, exp_dt, r):
-    if not isinstance(div_list, list):
-        return 0.0
-    pv = 0.0
-    for d in div_list:
-        pay = datetime.strptime(d["date"], "%Y-%m-%d")
-        if start_dt < pay < exp_dt:
-            T = _yearfrac(start_dt, pay)
-            pv += float(d["amount"]) * np.exp(-r * T)
-    return pv
-
-# ---- Black-Scholes (EUROPEAN) -----------------------------------------------
 def calculate_option_value(data):
     # Inputs
     opt_type = str(data["type"]).strip().lower()
@@ -45,11 +19,11 @@ def calculate_option_value(data):
 
     start_dt = datetime.combine(
         datetime.strptime(data["start_date"], "%Y-%m-%d").date(),
-        _parse_time_flexible(data.get("start_time"))
+        parse_time_string(data.get("start_time"))
     )
     exp_dt = datetime.combine(
         datetime.strptime(data["expiration_date"], "%Y-%m-%d").date(),
-        _parse_time_flexible(data.get("expiration_time"))
+        parse_time_string(data.get("expiration_time"))
     )
     T = _yearfrac(start_dt, exp_dt)
 
