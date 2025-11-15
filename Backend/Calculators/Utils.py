@@ -44,6 +44,20 @@ def yearfrac(start_dt, end_dt):
     """Actual/365 year fraction."""
     return max((end_dt - start_dt).total_seconds() / (365 * 24 * 3600), 0.0)
 
+def calculate_time_to_maturity(start_dt, start_time, exp_dt, exp_time):
+    """Calculate time to maturity in years."""
+    start_dt = datetime.combine(
+        datetime.strptime(start_dt, "%Y-%m-%d").date(),
+        parse_time_string(start_time)
+    )
+
+    exp_dt = datetime.combine(
+        datetime.strptime(exp_dt, "%Y-%m-%d").date(),
+        parse_time_string(exp_time)
+    )
+
+    return yearfrac(start_dt, exp_dt)
+
 
 def normalize_rate(x):
     """Treat 1.5 as 1.5%."""
@@ -62,3 +76,5 @@ def pv_dividends(div_list, start_dt, exp_dt, r):
             T = yearfrac(start_dt, pay_date)
             pv += float(d["amount"]) * np.exp(-r * T)
     return pv
+
+

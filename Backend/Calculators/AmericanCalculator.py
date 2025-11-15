@@ -7,7 +7,6 @@ import math
 # Description: AmericanOptionCalculator
 # ---------------------------------------------------------
 
-#Functions used only in the American option calculator
 def _american_binomial_calculation(stock_price, strike_price, risk_free_rate, dividend_yield, sigma, time_to_maturity, steps, is_call=True):
     """
     Prices an American option using a binomial tree.
@@ -64,7 +63,6 @@ def _american_binomial_calculation(stock_price, strike_price, risk_free_rate, di
     return vals[0]
 
 
-
 def calculate_option_value(data):
     # Inputs
     opt_type = data["type"].lower()
@@ -73,17 +71,7 @@ def calculate_option_value(data):
     K = float(data["strike"])
     sigma = float(data["volatility"])
     r = normalize_rate(data["interest_rate"])
-
-    # Dates and T
-    start_dt = datetime.combine(
-        datetime.strptime(data["start_date"], "%Y-%m-%d").date(),
-        parse_time_string(data.get("start_time")),
-    )
-    exp_dt = datetime.combine(
-        datetime.strptime(data["expiration_date"], "%Y-%m-%d").date(),
-        parse_time_string(data.get("expiration_time")),
-    )
-    T = yearfrac(start_dt, exp_dt)
+    T = calculate_time_to_maturity(data["start_date"], data.get("start_time"), data["expiration_date"], data.get("expiration_time"))
 
     # Steps
     steps = int(data.get("steps", 1000))
