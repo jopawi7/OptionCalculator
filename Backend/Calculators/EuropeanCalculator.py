@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as si
 from datetime import datetime
-from .Utils import *
+from Utils import *
 
 # ---------------------------------------------------------
 # Filename: EuropeanCalculator.py
