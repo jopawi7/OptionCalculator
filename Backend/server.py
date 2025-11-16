@@ -1,38 +1,53 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-from starlette.middleware.cors import CORSMiddleware
 from Calculators.AmericanCalculator import calculate_option_value as calcOptionAmerican
 from Calculators.AsianCalculator import calculate_option_value as calcOptionAsian
 from Calculators.BinaryCalculator import calculate_option_value as calcOptionBinary
 from Calculators.EuropeanCalculator import calculate_option_value as calcOptionEuropean
 
-
 # ---------------------------------------------------------
-# Filename: Server.py
-# Author: Jonas Patrick Witzel
-# Created: 2025-10-31
-# Description: Use FastAPI() to connect Frontend with Backend
+# Filename: server.py
+# Description: Use FastAPI() to connect Frontend with Backend,
+# now with detailed validation error handler!
 # ---------------------------------------------------------
-
-#TODO - define FastAPI Interface for Frontend
-# 1) pip install uvicorn
-# 2) change in Folder Backend
-# 3) uvicorn server:app --reload
-# 4) die API läuft unter dem angezeigten link
 
 app = FastAPI()
 
-#Add CORSE Middleware so that Angular has access to backend
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Exception Handler for Validation Errors ---
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"VALIDATION ERROR: {exc.errors()}")
+    print(f"Request body: {exc.body}")
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.errors(),
+            "body": exc.body,
+        },
+    )
+
+# Models
 class Dividend(BaseModel):
     date: str
     amount: float
 
 class OptionInput(BaseModel):
     type: str
-    exercise_style: str = Field(..., alias='style')
+    exercise_style: str
     start_date: str
     start_time: str
     expiration_date: str
@@ -43,21 +58,11 @@ class OptionInput(BaseModel):
     interest_rate: float
     dividends: Optional[List[Dividend]] = []
 
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.post("/calculate/")
+@app.post("/api/price")
 async def calculate(input_data: OptionInput):
     try:
         output_obj = calculateOptionWithData(input_data.dict())

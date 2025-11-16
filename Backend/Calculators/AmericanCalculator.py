@@ -82,7 +82,7 @@ def calculate_option_value(data):
     S0 = float(data["stock_price"])
     K = float(data["strike"])
     sigma = float(data["volatility"])
-    r = normalize_rate(data["interest_rate"])
+    r = normalize_interest_rate(data["interest_rate"])
     T = calculate_time_to_maturity(data["start_date"], data.get("start_time"), data["expiration_date"], data.get("expiration_time"))
 
     # Steps

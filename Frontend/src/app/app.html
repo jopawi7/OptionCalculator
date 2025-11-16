@@ -5,7 +5,6 @@
   <header class="hero" [class.show]="ready()">
     <div>
       <h1>Precise Option Pricing</h1>
-      <p class="subtitle">Black-Scholes (Demo) mit Dividenden</p>
     </div>
   </header>
 
@@ -130,22 +129,23 @@
 
       <!-- Submit -->
       <div class="cta-row">
-        <button type="submit" class="cta" [disabled]="calculatorForm.invalid">Calculate</button>
+        <button class="cta" (click)="onSubmit()">Calculate</button>
       </div>
     </form>
 
     <!-- Results -->
-    <div class="results-container">
-      <h2>Results</h2>
-      <div class="unified-grid">
-        <div class="card"><h3>Theoretical Price</h3><p>—</p></div>
-        <div class="card"><h3>Delta</h3><p>—</p></div>
-        <div class="card"><h3>Gamma</h3><p>—</p></div>
-        <div class="card"><h3>Rho</h3><p>—</p></div>
-        <div class="card"><h3>Theta</h3><p>—</p></div>
-        <div class="card"><h3>Vega</h3><p>—</p></div>
-      </div>
-    </div>
+<div class="results-container">
+  <h2>Results</h2>
+  <div class="unified-grid">
+    <div class="card"><h3>Theoretical Price</h3><p>{{ theoretical_price ?? '–' }}</p></div>
+    <div class="card"><h3>Delta</h3><p>{{ delta ?? '–' }}</p></div>
+    <div class="card"><h3>Gamma</h3><p>{{ gamma ?? '–' }}</p></div>
+    <div class="card"><h3>Rho</h3><p>{{ rho ?? '–' }}</p></div>
+    <div class="card"><h3>Theta</h3><p>{{ theta ?? '–' }}</p></div>
+    <div class="card"><h3>Vega</h3><p>{{ vega ?? '–' }}</p></div>
+  </div>
+</div>
+
 
   </main>
 </div>
