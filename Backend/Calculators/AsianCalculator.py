@@ -98,7 +98,15 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     strike_price = float(data["strike"])
     volatility = float(data["volatility"]) / 100.0
     risk_free_interest_rate = float(data["interest_rate"]) / 100.0
-    continuous_dividend_yield = float(data.get("dividend_yield", 0.0)) / 100.0
+
+    # Normalize dividends
+    dividends = data.get("dividends", 0.0)
+    if isinstance(dividends, list):
+        continuous_dividend_yield = sum(d.get("amount", 0.0) for d in dividends) / len(dividends) if dividends else 0.0
+    else:
+        continuous_dividend_yield = float(dividends) if dividends else 0.0
+
+
 
     # 4) Normalize dividend information
     dividend_events_list = _expand_dividends(
@@ -123,8 +131,10 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     average_price_type = data.get("average_type", "arithmetic").lower()
 
     number_of_fixings = int(data.get("n_fixings", 12))
-    number_of_simulations = int(data.get("mc_sims", 100_000))
+    number_of_simulations = int(data.get("mc_sims", 100))
+
     random_seed = int(data.get("seed", 42))
+
     monte_carlo_time_step_in_years = float(
         data.get(
             "mc_dt",

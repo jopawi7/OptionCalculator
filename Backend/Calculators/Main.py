@@ -26,6 +26,24 @@ def calculate_option():
         input_obj = json.load(f)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     # Select the corresponding calculator and calculate results and put into output.json
     output_obj = None
 
@@ -44,6 +62,7 @@ def calculate_option():
             output_obj = calcOptionEuropean(input_obj)
         case _:
             raise ValueError("Invalid exercise style")
+
 
     # Print Results from Calculation
     if output_obj is None:

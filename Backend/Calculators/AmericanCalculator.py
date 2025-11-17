@@ -78,30 +78,35 @@ def calculate_option_value(data):
       """
 
     # Parse Input to useable variables
-    opt_type = data["type"].lower()
-    is_call = opt_type == "call"
-    S0 = float(data["stock_price"])
-    K = float(data["strike"])
+    strike_price = float(data["strike"])
+    risk_free_rate = normalize_interest_rate(data["interest_rate"])
     sigma = float(data["volatility"])
-    r = normalize_interest_rate(data["interest_rate"])
-    T = calculate_time_to_maturity(data["start_date"], data.get("start_time"), data["expiration_date"], data.get("expiration_time"))
+    time_to_maturity = calculate_time_to_maturity(data["start_date"], data.get("start_time"), data["expiration_date"],
+                                                  data.get("expiration_time"))
 
+    # Check if option type is call or put
+    is_call = data["type"] == "call"
+
+    #Number of steps for tree <- Must be set here; eventually dynamic approach to program
     # Steps
     steps = int(data.get("steps", 1000))
     steps = max(1, steps)
 
     # Dividends handling
-    div = data.get("dividends", data.get("dividens", 0.0))
-    if isinstance(div, list):
-        q = 0.0
-        S = max(S0 - calculate_present_value_dividends(div, data["start_date"], data["expiration_date"], r), 1e-12)
-    else:
-        q = float(div)
-        S = S0
+    stock_price = max(
+        float(data["stock_price"]) - calculate_present_value_dividends(
+            data.get("dividends", []),
+            data["start_date"],
+            data["expiration_date"],
+            risk_free_rate
+        ),
+        1e-12
+    )
+    dividend_yield = 0
 
     # Edge case T<=0
-    if T <= 0:
-        price = max(S - K, 0.0) if is_call else max(K - S, 0.0)
+    if time_to_maturity <= 0:
+        price = max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
         return {
             "theoretical_price": round(price, 3),
             "delta": 0.0,
@@ -114,38 +119,38 @@ def calculate_option_value(data):
     # Pricing function for bumps
     def price_fn(Sv, sigmav, rv, Tv):
         steps_local = max(1, steps)
-        return _american_binomial_calculation(Sv, K, rv, q, sigmav, max(Tv, 0.0), steps_local, is_call=is_call)
+        return _american_binomial_calculation(Sv, strike_price, rv, dividend_yield, sigmav, max(Tv, 0.0), steps_local, is_call=is_call)
 
     # Base price
-    base_price = price_fn(S, sigma, r, T)
+    base_price = price_fn(stock_price, sigma, risk_free_rate, time_to_maturity)
 
     # Step sizes for Greeks
-    h = max(0.01 * S, 1e-4)
+    h = max(0.01 * stock_price, 1e-4)
     ds = max(0.01 * sigma, 1e-4)
     dr = 1e-4
 
     # Delta and Gamma (central differences)
-    p_up = price_fn(S + h, sigma, r, T)
-    p_dn = price_fn(max(S - h, 1e-12), sigma, r, T)
+    p_up = price_fn(stock_price + h, sigma, risk_free_rate, time_to_maturity)
+    p_dn = price_fn(max(stock_price - h, 1e-12), sigma, risk_free_rate, time_to_maturity)
     delta = (p_up - p_dn) / (2 * h)
     gamma = (p_up - 2 * base_price + p_dn) / (h * h)
 
     # Vega (central diff) scaled per +1 vol point
-    p_vs_up = price_fn(S, sigma + ds, r, T)
-    p_vs_dn = price_fn(S, max(sigma - ds, 1e-12), r, T)
+    p_vs_up = price_fn(stock_price, sigma + ds, risk_free_rate, time_to_maturity)
+    p_vs_dn = price_fn(stock_price, max(sigma - ds, 1e-12), risk_free_rate, time_to_maturity)
     vega = (p_vs_up - p_vs_dn) / (2 * ds)
     vega_pct = vega / 100.0  # per +1% vol
 
     # Rho (central diff) scaled per +1% rate
-    p_r_up = price_fn(S, sigma, r + dr, T)
-    p_r_dn = price_fn(S, sigma, max(r - dr, -1.0), T)
+    p_r_up = price_fn(stock_price, sigma, risk_free_rate + dr, time_to_maturity)
+    p_r_dn = price_fn(stock_price, sigma, max(risk_free_rate - dr, -1.0), time_to_maturity)
     rho = (p_r_up - p_r_dn) / (2 * dr)
     rho_pct = rho / 100.0
 
     # Theta per day: V(T_minus) - V(T)
     one_day = 1.0 / 365.0
-    T_minus = max(T - one_day, 0.0)
-    p_T_minus = price_fn(S, sigma, r, T_minus)
+    T_minus = max(time_to_maturity - one_day, 0.0)
+    p_T_minus = price_fn(stock_price, sigma, risk_free_rate, T_minus)
     theta_per_day = p_T_minus - base_price
 
     return {

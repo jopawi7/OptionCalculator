@@ -1,8 +1,8 @@
 {
-  "theoretical_price": 5.674,
-  "delta": 0.547,
-  "gamma": 0.03,
-  "rho": 22.053,
-  "theta": -6.641,
-  "vega": 26.58
+  "theoretical_price": 111.1313,
+  "delta": 0.7039,
+  "gamma": -0.0,
+  "rho": -3.9319,
+  "theta": 940.4574,
+  "vega": -0.016
 }

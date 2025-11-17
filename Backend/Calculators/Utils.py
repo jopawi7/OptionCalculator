@@ -29,9 +29,9 @@ def parse_time_string(time_string: str):
         return time(0, 0)
     tstr = str(time_string).strip().upper()
     if tstr in {"AM"}:
-        return time(0, 0)
+        return time(9, 30)
     if tstr in {"PM"}:
-        return time(12, 0)
+        return time(15, 30)
     for fmt in ["%H:%M", "%H:%M:%S", "%I:%M %p", "%I %p"]:
         try:
             return datetime.strptime(tstr, fmt).time()
