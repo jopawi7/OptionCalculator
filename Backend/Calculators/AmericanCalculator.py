@@ -7,6 +7,7 @@ import math
 # Description: AmericanOptionCalculator
 # ---------------------------------------------------------
 
+
 def _american_binomial_calculation(stock_price, strike_price, risk_free_rate, dividend_yield, sigma, time_to_maturity, steps, is_call=True):
     """
     Prices an American option using a binomial tree.
