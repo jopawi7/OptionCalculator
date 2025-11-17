@@ -64,7 +64,7 @@ def calculate_option_value(data):
     else:
         q = float(dividends) if dividends else 0.0
     
-    Q = 1.0
+    Q = 1.0 #à supprimer, rempalcer par 1 ou -1 
 
     fmt = "%Y-%m-%d"
     T = (datetime.strptime(data["expiration_date"], fmt) - 
