@@ -13,6 +13,36 @@ def n(x):
     """PDF of the standard normal distribution."""
     return (1.0 / sqrt(2.0 * pi)) * exp(-0.5 * x**2)
 
+def read_inputs_from_file(filename=None):
+    """
+    Read and normalize input parameters from a JSON file.
+    If no filename is provided, use ../Input/input.json relative to this script.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    if filename is None:
+        filename = os.path.join(base_dir, "..", "Input", "input.json")
+
+    filename = os.path.normpath(filename)
+
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"JSON file not found: {filename}")
+
+    with open(filename, "r") as f:
+        data = json.load(f)
+
+    if isinstance(data.get("dividends"), list):
+        total_div = sum(d.get("amount", 0.0) for d in data["dividends"])
+        data["dividends"] = total_div / len(data["dividends"]) if data["dividends"] else 0.0
+    elif not isinstance(data.get("dividends"), (int, float)):
+        data["dividends"] = 0.0
+
+    data["type"] = data.get("type", "").lower()
+
+    return data
+
+
+
 def calculate_option_value(data):
     """
     Compute price and Greeks for a binary (cash-or-nothing) option 
