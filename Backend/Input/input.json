@@ -10,7 +10,8 @@
   "volatility": 0.20,
   "interest_rate": 1.5,
   "average_type": "arithmetic",
-  "number_of_steps": 1000,
+  "number_of_steps": 100,
+  "number_of_simulations":  10000,
   "dividends": [
     { "date": "2025-11-20", "amount": 1.0 },
     { "date": "2025-11-21", "amount": 2.0 }

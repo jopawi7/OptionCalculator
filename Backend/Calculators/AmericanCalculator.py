@@ -1,5 +1,7 @@
 from Utils import *
-import math
+import numpy as np
+from datetime import datetime, time
+
 
 # ---------------------------------------------------------
 # Filename: AmericanCalculator.py
@@ -8,101 +10,153 @@ import math
 # ---------------------------------------------------------
 
 
-def _american_binomial_calculation(stock_price, strike_price, risk_free_rate, dividend_yield, sigma, time_to_maturity, steps, is_call=True):
-    """
-    Prices an American option using a binomial tree.
 
-    Used in:
-        - AmericanCalculator
+def monte_carlo_american_option(S0, K, r, sigma, T, steps, N, is_call):
+    """
+    Price American option using Monte Carlo simulation with Longstaff-Schwartz algorithm.
 
     Args:
-        stock_price (float): Current stock price.
-        strike_price (float): Strike price.
-        risk_free_rate (float): Risk-free interest rate.
-        dividend_yield (float): Dividend yield.
-        sigma (float): Volatility.
-        time_to_maturity (float): Time to maturity in years.
-        steps (int): Number of time steps in the tree.
-        is_call (bool): True if call option, False if put.
+        S0: Initial stock price
+        K: Strike price
+        r: Risk-free rate (decimal)
+        sigma: Volatility
+        T: Time to maturity (years)
+        steps: Number of time steps
+        N: Number of simulation paths
+        is_call: True for call, False for put
 
     Returns:
-        float: Theoretical price of the American option.
+        Option price
     """
+    if T <= 0:
+        if is_call:
+            return max(S0 - K, 0.0)
+        else:
+            return max(K - S0, 0.0)
 
-    stock_price = max(stock_price, 1e-12)
-    if time_to_maturity <= 0:
-        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
-    dt = time_to_maturity / steps
-    if sigma <= 0 or dt <= 0:
-        # No volatility: price equals intrinsic at start (no time value)
-        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
-    u = math.exp(sigma * math.sqrt(dt))
-    d = 1.0 / u
-    if abs(u - d) < 1e-14:
-        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
-    disc = math.exp(-risk_free_rate * dt)
-    drift = math.exp((risk_free_rate - dividend_yield) * dt)
-    p = (drift - d) / (u - d)
-    # clamp to [0,1] to avoid arbitrage issues from numerics
-    p = max(0.0, min(1.0, p))
+    np.random.seed(42)  # For reproducibility
 
-    # Terminal values
-    vals = [0.0] * (steps + 1)
-    S_ud = stock_price * (d ** steps)
-    for j in range(steps + 1):
-        S_T = S_ud * (u / d) ** j
-        intrinsic = max(S_T - strike_price, 0.0) if is_call else max(strike_price - S_T, 0.0)
-        vals[j] = intrinsic
+    dt = T / steps
+    discount = np.exp(-r * dt)
 
-    # Backward induction with early exercise
-    for i in range(steps - 1, -1, -1):
-        for j in range(i + 1):
-            cont = disc * (p * vals[j + 1] + (1 - p) * vals[j])
-            S_ij = stock_price * (u ** j) * (d ** (i - j))
-            exercise = max(S_ij - strike_price, 0.0) if is_call else max(strike_price - S_ij, 0.0)
-            vals[j] = max(cont, exercise)
-    return vals[0]
+    # Simulate price paths
+    S = np.zeros((N, steps + 1))
+    S[:, 0] = S0
+
+    for t in range(1, steps + 1):
+        Z = np.random.standard_normal(N)
+        S[:, t] = S[:, t - 1] * np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * Z)
+
+    # Calculate payoffs at maturity
+    if is_call:
+        payoff = np.maximum(S[:, -1] - K, 0)
+    else:
+        payoff = np.maximum(K - S[:, -1], 0)
+
+    # Longstaff-Schwartz algorithm for early exercise
+    # Work backwards through time
+    for t in range(steps - 1, 0, -1):
+        # Intrinsic value at time t
+        if is_call:
+            intrinsic = np.maximum(S[:, t] - K, 0)
+        else:
+            intrinsic = np.maximum(K - S[:, t], 0)
+
+        # Find paths where early exercise is valuable (in the money)
+        itm = intrinsic > 0
+
+        if np.sum(itm) > 0:
+            # Regression to estimate continuation value
+            # Use polynomial basis functions: 1, S, S^2
+            X = S[itm, t]
+            Y = payoff[itm] * discount
+
+            # Fit polynomial regression
+            A = np.vstack([np.ones(len(X)), X, X ** 2]).T
+            try:
+                coeffs = np.linalg.lstsq(A, Y, rcond=None)[0]
+                continuation_value = A @ coeffs
+
+                # Exercise if intrinsic value > continuation value
+                exercise = intrinsic[itm] > continuation_value
+
+                # Update payoff for exercised paths
+                payoff[itm] = np.where(exercise, intrinsic[itm], payoff[itm] * discount)
+                # Update payoff for out-of-money paths
+                payoff[~itm] *= discount
+            except:
+                # If regression fails, just use intrinsic vs discounted continuation
+                payoff = np.maximum(intrinsic, payoff * discount)
+        else:
+            # No ITM paths, just discount
+            payoff *= discount
+
+    # Discount to present and average
+    option_price = np.mean(payoff) * discount
+
+    return option_price
 
 
 def calculate_option_value(data):
     """
-    Calculates the option value for an American using a binomial tree.
-      Used in:
-          - AmericanCalcluator
+    Calculates the option value for an American option using Monte Carlo simulation.
 
-      Args:
-          data: JSON-Object with all necessary data for the calculation.
+    Args:
+        data: JSON-Object with all necessary data for the calculation.
+              Expected keys:
+              - type: "call" or "put"
+              - strike: Strike price
+              - stock_price: Current stock price
+              - interest_rate: Risk-free rate (can be in % or decimal)
+              - volatility: Volatility
+              - start_date: Start date (YYYY-MM-DD)
+              - start_time: Start time (HH:MM, HH:MM:SS, AM, PM, etc.)
+              - expiration_date: Expiration date (YYYY-MM-DD)
+              - expiration_time: Expiration time
+              - number_of_steps: Number of time steps (default 100)
+              - number_of_simulations: Number of MC simulations (default 10000)
+              - dividends: List of dividends (optional)
 
-      Returns:
-          data: JSON-Object with the calculated values for the option.
-      """
+    Returns:
+        dict: JSON-Object with the calculated values for the option.
+    """
 
     # Parse Input to useable variables
     strike_price = float(data["strike"])
     risk_free_rate = normalize_interest_rate(data["interest_rate"])
     sigma = float(data["volatility"])
-    time_to_maturity = calculate_time_to_maturity(data["start_date"], data.get("start_time"), data["expiration_date"],
-                                                  data.get("expiration_time"))
+
+    # Calculate time to maturity using the utils function
+    time_to_maturity = calculate_time_to_maturity(
+        data["start_date"],
+        data.get("start_time", ""),
+        data["expiration_date"],
+        data.get("expiration_time", "")
+    )
 
     # Check if option type is call or put
-    is_call = data["type"] == "call"
+    is_call = data["type"].lower() == "call"
 
-    #Number of steps for tree <- Must be set here; eventually dynamic approach to program
-    # Steps
-    steps = int(data.get("steps", 1000))
+    # Number of steps and simulations for Monte Carlo
+    steps = int(data.get("number_of_steps", 100))
     steps = max(1, steps)
 
-    # Dividends handling
+    # Number of simulation paths
+    simulations = int(data.get("number_of_simulations", 10000))
+    simulations = max(1000, simulations)
+
+    # Dividends handling using the utils function
+    pv_dividends = calculate_present_value_dividends(
+        data.get("dividends", []),
+        data["start_date"],
+        data["expiration_date"],
+        risk_free_rate
+    )
+
     stock_price = max(
-        float(data["stock_price"]) - calculate_present_value_dividends(
-            data.get("dividends", []),
-            data["start_date"],
-            data["expiration_date"],
-            risk_free_rate
-        ),
+        float(data["stock_price"]) - pv_dividends,
         1e-12
     )
-    dividend_yield = 0
 
     # Edge case T<=0
     if time_to_maturity <= 0:
@@ -118,8 +172,9 @@ def calculate_option_value(data):
 
     # Pricing function for bumps
     def price_fn(Sv, sigmav, rv, Tv):
-        steps_local = max(1, steps)
-        return _american_binomial_calculation(Sv, strike_price, rv, dividend_yield, sigmav, max(Tv, 0.0), steps_local, is_call=is_call)
+        return monte_carlo_american_option(
+            Sv, strike_price, rv, sigmav, max(Tv, 0.0), steps, simulations, is_call
+        )
 
     # Base price
     base_price = price_fn(stock_price, sigma, risk_free_rate, time_to_maturity)
@@ -161,3 +216,76 @@ def calculate_option_value(data):
         "theta": round(theta_per_day, 3),
         "vega": round(vega_pct, 3),
     }
+
+
+# Example usage
+if __name__ == "__main__":
+    # Example data matching the new format
+    data = {
+        "type": "call",
+        "exercise_style": "american",
+        "start_date": "2025-11-16",
+        "start_time": "17:22:34",
+        "expiration_date": "2026-04-30",
+        "expiration_time": "AM",
+        "strike": 100,
+        "stock_price": 299,
+        "volatility": 0.20,
+        "interest_rate": 1.5,
+        "number_of_steps": 100,
+        "number_of_simulations": 10000,
+        "dividends": [
+            {"date": "2025-11-20", "amount": 1.0},
+            {"date": "2025-11-21", "amount": 2.0}
+        ]
+    }
+
+    result = calculate_option_value(data)
+    print("Option Pricing Results:")
+    print(f"Theoretical Price: {result['theoretical_price']}")
+    print(f"Delta: {result['delta']}")
+    print(f"Gamma: {result['gamma']}")
+    print(f"Vega: {result['vega']}")
+    print(f"Theta: {result['theta']}")
+    print(f"Rho: {result['rho']}")
+
+
+
+"""
+Code for AmericanCalculator with binomial Model. Unfortunately we should use the monte carlo simulation.
+
+def _american_binomial_calculation(stock_price, strike_price, risk_free_rate, dividend_yield, sigma, time_to_maturity, steps, is_call=True):
+    stock_price = max(stock_price, 1e-12)
+    if time_to_maturity <= 0:
+        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
+    dt = time_to_maturity / steps
+    if sigma <= 0 or dt <= 0:
+        # No volatility: price equals intrinsic at start (no time value)
+        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
+    u = math.exp(sigma * math.sqrt(dt))
+    d = 1.0 / u
+    if abs(u - d) < 1e-14:
+        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
+    disc = math.exp(-risk_free_rate * dt)
+    drift = math.exp((risk_free_rate - dividend_yield) * dt)
+    p = (drift - d) / (u - d)
+    # clamp to [0,1] to avoid arbitrage issues from numerics
+    p = max(0.0, min(1.0, p))
+
+    # Terminal values
+    vals = [0.0] * (steps + 1)
+    S_ud = stock_price * (d ** steps)
+    for j in range(steps + 1):
+        S_T = S_ud * (u / d) ** j
+        intrinsic = max(S_T - strike_price, 0.0) if is_call else max(strike_price - S_T, 0.0)
+        vals[j] = intrinsic
+
+    # Backward induction with early exercise
+    for i in range(steps - 1, -1, -1):
+        for j in range(i + 1):
+            cont = disc * (p * vals[j + 1] + (1 - p) * vals[j])
+            S_ij = stock_price * (u ** j) * (d ** (i - j))
+            exercise = max(S_ij - strike_price, 0.0) if is_call else max(strike_price - S_ij, 0.0)
+            vals[j] = max(cont, exercise)
+    return vals[0]
+"""

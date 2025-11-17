@@ -27,6 +27,30 @@ def calculate_option():
 
 
 
+    choice = input("Use JSON file input? (y/n): ").strip().lower()
+
+    if choice == "y":
+        try:
+            data = read_inputs_from_file()
+            print("Loaded input from ../Input/input.json")
+        except Exception as e:
+            print(f"Error loading JSON: {e}")
+            exit(1)
+    else:
+        print("Enter parameters manually:\n")
+        data = {
+            "type": input("Option type (call / put): ").strip().lower(),
+            "start_date": input("Start date (YYYY-MM-DD): ").strip(),
+            "expiration_date": input("Expiration date (YYYY-MM-DD): ").strip(),
+            "strike": float(input("Strike: ")),
+            "stock_price": float(input("Stock price: ")),
+            "volatility": float(input("Volatility (decimal, e.g. 0.2): ")),
+            "interest_rate": float(input("Interest rate (decimal, e.g. 0.05): ")),
+            "dividends": float(input("Dividend yield (decimal, e.g. 0.00): ")),
+        }
+
+
+
 
 
 
