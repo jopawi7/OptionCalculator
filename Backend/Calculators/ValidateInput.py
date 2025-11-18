@@ -107,5 +107,54 @@ def validate_interest_rate(value):
     return ir
 
 
+#Dividend handling:
+def ask_yes_no(prompt):
+    while True:
+        ans = input(prompt + " (yes/no): ").strip().lower()
+        if ans in ('yes', 'no'):
+            return ans == 'yes'
+        print("Please answer 'yes' or 'no'.")
+
+def ask_until_valid_date_in_range(prompt, start_date, end_date):
+    date_pattern = r"^\d{4}-\d{2}-\d{2}$"
+    regex = re.compile(date_pattern)
+    while True:
+        date_str = input(prompt).strip()
+        if not regex.fullmatch(date_str):
+            print("Invalid date format. Please use YYYY-MM-DD.")
+            continue
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+        if date_obj < datetime.strptime(start_date, "%Y-%m-%d") or date_obj > datetime.strptime(end_date, "%Y-%m-%d"):
+            print(f"Date must be between {start_date} and {end_date}.")
+            continue
+        return date_str
+
+def ask_until_valid_amount(prompt):
+    while True:
+        val_str = input(prompt).strip().replace(',', '.')
+        try:
+            val = float(val_str)
+            if val < 0:
+                print("Amount must be 0 or greater.")
+                continue
+            return val
+        except ValueError:
+            print("Invalid number. Please try again.")
+
+def input_dividends(start_date, expiration_date):
+    dividends = []
+    if not ask_yes_no("Do you want to enter dividends?"):
+        return []    # Wenn nein, leere Liste zurückgeben, alte Daten löschen
+    print("Please enter dividends between the start and expiration dates:")
+    while True:
+        date = ask_until_valid_date_in_range("Enter dividend date (YYYY-MM-DD): ", start_date, expiration_date)
+        amount = ask_until_valid_amount("Enter dividend amount (>= 0): ")
+        dividends.append({'date': date, 'amount': amount})
+        if not ask_yes_no("Add another dividend?"):
+            break
+    return dividends
+
+
+
 
 

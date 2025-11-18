@@ -89,13 +89,11 @@ def calculate_option():
             input_obj['number_of_simulations'] = ask_until_valid_integer("Enter number of simulations (>= 1): ",
                                                                          minimum=1, maximum=1000000)
 
+        input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
 
 
 
 
-
-
-        input_obj['dividends'] = []
 
 
 
