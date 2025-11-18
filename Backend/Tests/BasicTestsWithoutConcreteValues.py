@@ -31,10 +31,11 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from AmericanCalculator import calculate_option_value as american_calc
-from AsianCalculator import calculate_option_value as asian_calc
-from BinaryCalculator import calculate_option_value as binary_calc
-from EuropeanCalculator import calculate_option_value as european_calc
+from Backend.Calculators.AmericanCalculator import calculate_option_value as american_calc
+from Backend.Calculators.AsianCalculator import calculate_option_value as asian_calc
+from Backend.Calculators.BinaryCalculator import calculate_option_value as binary_calc
+from Backend.Calculators.EuropeanCalculator import calculate_option_value as european_calc
+
 
 
 # ===================================================================
