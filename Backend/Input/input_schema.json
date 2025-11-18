@@ -47,11 +47,13 @@
     },
     "number_of_steps": {
       "type": "integer",
-      "minimum": 1
+      "minimum": 1,
+      "maximum": 1000
     },
     "number_of_simulations": {
       "type": "integer",
-      "minimum": 1
+      "minimum": 1,
+      "maximum": 1000000
     },
     "dividends": {
       "type": "array",

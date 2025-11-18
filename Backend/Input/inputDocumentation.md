@@ -31,7 +31,7 @@ For the input.json file only the following structure is accepted. NEVER remove k
   - Usually \( r \geq -1 \) (rarely less than -100%) or \( r \geq 0 \) in most practical cases
 
 - The `number_of_steps` and `number_of_simulations` must be integers greater than or equal to 1:
-  - \( n \geq 1 \)
+  - \( n \geq 1 \). Furthe number_of steps <= 10000 and number_of simulations <= 100000
 
 - Dividend amounts (`dividends[].amount`) must be zero or positive:
   - \( D \geq 0 \)

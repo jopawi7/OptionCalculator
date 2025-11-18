@@ -64,6 +64,30 @@ def calculate_option():
         input_obj['stock_price'] = ask_until_valid_number("Enter stock price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
         input_obj['strike'] = ask_until_valid_number("Enter strike price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
 
+        while True:
+            vol_input = input("Enter volatility (> 0), e.g. 0.20 for 20%: ")
+            try:
+                input_obj['volatility'] = validate_volatility(vol_input)
+                break
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        while True:
+            ir_input = input("Enter interest rate (percent), e.g. 1.5 for 1.5%: ")
+            try:
+                input_obj['interest_rate'] = validate_interest_rate(ir_input)
+                break
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        if input_obj['exercise_style'] == 'asian':
+            input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})
+
+        if input_obj['exercise_style'] == 'asian' or input_obj['exercise_style'] == 'american':
+            input_obj['number_of_steps'] = ask_until_valid_integer("Enter number of steps (>= 1) for MC-Simulation: ", minimum=1,
+                                                                   maximum=1000)
+            input_obj['number_of_simulations'] = ask_until_valid_integer("Enter number of simulations (>= 1): ",
+                                                                         minimum=1, maximum=1000000)
 
 
 
@@ -71,9 +95,6 @@ def calculate_option():
 
 
 
-
-        input_obj['volatility']
-        input_obj['interest_rate']
         input_obj['dividends'] = []
 
 
