@@ -1,32 +1,86 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "type": {"type": "string", "enum": ["call", "put"]},
-    "exercise_style": {"type": "string", "enum": ["american","european","asian","binary"]},
-    "start_date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
-    "start_time": {"type": "string"},
-    "expiration_date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
-    "expiration_time": {"type": "string"},
-    "strike": {"type": "number"},
-    "stock_price": {"type": "number"},
-    "volatility": {"type": "number"},
-    "interest_rate": {"type": "number"},
-    "average_type": {"type": "string", "enum": ["arithmetic", "geometric"]},
-    "number_of_steps": {"type": "integer"},
-    "number_of_simulations": {"type": "integer"},
+    "type": {
+      "type": "string",
+      "enum": ["call", "put"]
+    },
+    "exercise_style": {
+      "type": "string",
+      "enum": ["american", "european", "asian", "binary"]
+    },
+    "start_date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "start_time": {
+      "type": "string",
+      "pattern": "^(\\d{2}:\\d{2}:\\d{2}|AM|PM)$"
+    },
+    "expiration_date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "expiration_time": {
+      "type": "string",
+      "pattern": "^(\\d{2}:\\d{2}:\\d{2}|AM|PM)$"
+    },
+    "strike": {
+      "type": "number"
+    },
+    "stock_price": {
+      "type": "number"
+    },
+    "volatility": {
+      "type": "number"
+    },
+    "interest_rate": {
+      "type": "number"
+    },
+    "average_type": {
+      "type": "string",
+      "enum": ["arithmetic", "geometric"]
+    },
+    "number_of_steps": {
+      "type": "integer"
+    },
+    "number_of_simulations": {
+      "type": "integer"
+    },
     "dividends": {
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
-          "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
-          "amount": {"type": "number"}
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "amount": {
+            "type": "number"
+          }
         },
-        "required": ["date", "amount"]
+        "required": ["date", "amount"],
+        "additionalProperties": false
       }
     }
   },
-  "required": ["type", "exercise_style", "start_date", "start_time", "expiration_date",
-               "expiration_time", "strike", "stock_price", "volatility", "interest_rate",
-               "number_of_steps", "number_of_simulations", "dividends"]
+  "required": [
+    "type",
+    "exercise_style",
+    "start_date",
+    "start_time",
+    "expiration_date",
+    "expiration_time",
+    "strike",
+    "stock_price",
+    "volatility",
+    "interest_rate",
+    "average_type",
+    "number_of_steps",
+    "number_of_simulations",
+    "dividends"
+  ],
+  "additionalProperties": false
 }
