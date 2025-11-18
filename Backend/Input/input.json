@@ -1,25 +1,21 @@
 {
     "type": "put",
-    "exercise_style": "european",
+    "exercise_style": "american",
     "start_date": "2025-11-18",
-    "start_time": "15:00:00",
-    "expiration_date": "2026-11-16",
-    "expiration_time": "PM",
-    "strike": 100,
-    "stock_price": 100,
-    "volatility": 0.2,
-    "interest_rate": 1.5,
+    "start_time": "16:51:14",
+    "expiration_date": "2026-12-31",
+    "expiration_time": "am",
+    "strike": 122.22,
+    "stock_price": 100.0,
+    "volatility": 0.1,
+    "interest_rate": 0.015,
     "average_type": "arithmetic",
     "number_of_steps": 100,
     "number_of_simulations": 1000,
     "dividends": [
         {
             "date": "2025-11-28",
-            "amount": 1.0
-        },
-        {
-            "date": "2026-02-19",
-            "amount": 1.0
+            "amount": 1.3
         }
     ]
 }

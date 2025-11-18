@@ -49,7 +49,7 @@ def calculate_option():
     #If new input dialog make dialog... else skip:
     if choice == "new":
         input_obj['type'] = ask_until_valid_string("Which option type do you want to calculate? (call|put): ", {"call", "put"}).lower()
-        input_obj['exercise_style'] = ask_until_valid_string("Which exercise style do you want (american|european|asian|binary): )", {"american", "european", "asian", "binary"} ).lower()
+        input_obj['exercise_style'] = ask_until_valid_string("Which exercise style do you want (american|european|asian|binary): ", {"american", "european", "asian", "binary"} ).lower()
 
 
         while True:
@@ -90,11 +90,6 @@ def calculate_option():
                                                                          minimum=1, maximum=1000000)
 
         input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
-
-
-
-
-
 
 
 

@@ -102,8 +102,6 @@ def validate_interest_rate(value):
         ir = float(str(value).replace(',', '.'))
     except Exception:
         raise ValueError("Interest rate must be a number.")
-    if ir > 1:
-        ir = ir / 100.0
     return ir
 
 
