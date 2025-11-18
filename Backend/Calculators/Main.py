@@ -44,12 +44,16 @@ def calculate_option():
 
 
 
+
     #Transform all non-monthly Stings to lowercase
     input_obj['type'] = input_obj['type'].lower()
     input_obj['exercise_style'] = input_obj['exercise_style'].lower()
     input_obj['start_time'] = input_obj['start_time'].lower()
     input_obj['expiration_time'] = input_obj['expiration_time'].lower()
     input_obj['average_type'] = input_obj['average_type'].lower()
+
+    #TODO - valid date
+
 
     #Validate that Object fits to our input_schema.json
     try:

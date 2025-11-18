@@ -27,26 +27,32 @@
       "pattern": "^(?:([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d|[aA][mM]|[pP][mM])$"
     },
     "strike": {
-      "type": "number"
+      "type": "number",
+      "minimum": 0.01
     },
     "stock_price": {
-      "type": "number"
+      "type": "number",
+      "minimum": 0.01
     },
     "volatility": {
-      "type": "number"
+      "type": "number",
+      "exclusiveMinimum": 0
     },
     "interest_rate": {
       "type": "number"
+      // Optional: "minimum": -1 für Negativzinsen falls benötigt
     },
     "average_type": {
       "type": "string",
       "enum": ["arithmetic", "geometric"]
     },
     "number_of_steps": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1
     },
     "number_of_simulations": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1
     },
     "dividends": {
       "type": "array",
@@ -58,7 +64,8 @@
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
           },
           "amount": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           }
         },
         "required": ["date", "amount"],

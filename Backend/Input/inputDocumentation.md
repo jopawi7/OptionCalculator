@@ -18,3 +18,26 @@ For the input.json file only the following structure is accepted:
   { "date": "YYYY-MM-DD", "amount": float },
   ...\]
 }
+
+## Mathematical Constraints
+- The `stock_price` and `strike` values must be strictly positive:
+  - \( S > 0 \)
+  - \( K > 0 \)
+
+- The `volatility` must be greater than zero:
+  - \( \sigma > 0 \)
+
+- The `interest_rate` can be positive or negative but is typically bounded:
+  - Usually \( r \geq -1 \) (rarely less than -100%) or \( r \geq 0 \) in most practical cases
+
+- The `number_of_steps` and `number_of_simulations` must be integers greater than or equal to 1:
+  - \( n \geq 1 \)
+
+- Dividend amounts (`dividends[].amount`) must be zero or positive:
+  - \( D \geq 0 \)
+
+- The `expiration_date` must be chronologically after the `start_date`:
+  - \( t_{exp} > t_{start} \)
+  - This temporal constraint requires application-level validation, since JSON Schema cannot express cross-field conditions
+
+- All numeric values must be finite (no NaN or infinity)

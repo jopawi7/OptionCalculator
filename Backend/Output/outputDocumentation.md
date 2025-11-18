@@ -8,7 +8,7 @@ The output is always provided in the following JSON format:
   "vega": number
 }
 
-Details:
+## Details:
 -All numerical values are rounded to three decimal places for clarity and consistency.
 
 -The fields represent the option’s price (theoretical_price) and its sensitivities (Greeks):
@@ -18,7 +18,7 @@ Details:
 #theta: Sensitivity to the passage of time (time decay)
 #vega: Sensitivity to volatility
 
--Mathematical Constraints
+## Mathematical Constraints
 #theoretical_price is always greater than or equal to zero.
 #delta ranges from -1 to 1 (negative for puts, positive for calls).
 #gamma and vega are non-negative values (≥ 0).
