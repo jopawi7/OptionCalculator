@@ -64,6 +64,7 @@ def calculate_present_value_dividends(dividend_list, start_date, expiry_date, ri
 def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time):
     """
     Calculate time to maturity in years based on start_date, start_time, expire_date, expire_time.
+    Throws ValueError if expiration datetime is not after start datetime.
     """
     start_dt = datetime.combine(
         datetime.strptime(start_date, "%Y-%m-%d").date(),
@@ -73,5 +74,8 @@ def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time)
         datetime.strptime(expire_date, "%Y-%m-%d").date(),
         parse_time_string(expire_time)
     )
+    if expire_dt <= start_dt:
+        raise ValueError("Expiration datetime must be after start datetime.")
     return calculate_year_fraction(start_dt, expire_dt)
+
 
