@@ -11,16 +11,25 @@ from dateutil.parser import parse
 # ---------------------------------------------------------
 
 
-def year_fraction_with_time(start_date, start_time, expiration_date, expiration_time):
-    start_datetime_str = start_date + ' ' + start_time
-    exp_time_hour = 12 if expiration_time.lower() == 'pm' else 0
-    expiration_datetime_str = expiration_date + f' {exp_time_hour}:00:00'
+def year_fraction_with_exact_days(start_date, start_time, expiration_date, expiration_time):
+    start_str = f"{start_date} {start_time or '00:00:00'}"
 
-    start_dt = parse(start_datetime_str)
-    expiration_dt = parse(expiration_datetime_str)
+    # Setze Stunden und Minuten getrennt als Strings bzw. ints
+    if expiration_time and expiration_time.lower() == 'pm':
+        exp_time_str = '16:00:00'
+    else:
+        exp_time_str = '09:30:00'
 
-    delta = expiration_dt - start_dt
-    return delta.total_seconds() / (365.25 * 24 * 3600)  # berücksichtigt durchschnittliche Schaltjahre
+    expiration_str = f"{expiration_date} {exp_time_str}"
+
+    start_dt = datetime.strptime(start_str, '%Y-%m-%d %H:%M:%S')
+    exp_dt = datetime.strptime(expiration_str, '%Y-%m-%d %H:%M:%S')
+
+    delta_days = (exp_dt - start_dt).days + (exp_dt - start_dt).seconds / (24 * 3600)
+    year_basis = 365  # oder 365.25 für Schaltjahre
+
+    return delta_days / year_basis
+
 
 def calculate_option_value(data):
     option_type = data["type"]
@@ -33,7 +42,7 @@ def calculate_option_value(data):
     volatility = data["volatility"]
     interest_rate = data["interest_rate"] / 100.0
 
-    T = year_fraction_with_time(start_date, start_time, expiration_date, expiration_time)
+    T = year_fraction_with_exact_days(start_date, start_time, expiration_date, expiration_time)
 
     S = stock_price  # Keine Dividendenanpassung
 
