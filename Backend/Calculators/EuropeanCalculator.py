@@ -1,7 +1,7 @@
 from datetime import datetime
 import numpy as np
 from scipy.stats import norm
-from dateutil.parser import parse
+from datetime import datetime
 
 # ---------------------------------------------------------
 # Filename: EuropeanCalculator.py
@@ -11,22 +11,37 @@ from dateutil.parser import parse
 # ---------------------------------------------------------
 
 
-def year_fraction_with_exact_days(start_date, start_time, expiration_date, expiration_time):
-    start_str = f"{start_date} {start_time or '00:00:00'}"
-
-    # Setze Stunden und Minuten getrennt als Strings bzw. ints
-    if expiration_time and expiration_time.lower() == 'pm':
-        exp_time_str = '16:00:00'
+def parse_time_str(time_str):
+    """
+    Parst ein Zeitformat gemäß Schema:
+    - HH:MM:SS (24h) z.B. "15:30:00"
+    - oder "am"/"pm" (ohne Uhrzeit, interpretiert als feste Zeit)
+    Liefert Zeitstring 'HH:MM:SS' für datetime parsing zurück.
+    """
+    if not time_str:
+        return "00:00:00"
+    s = time_str.lower()
+    if s == 'am':
+        return "09:30:00"  # Marktöffnung
+    elif s == 'pm':
+        return "16:00:00"  # Marktschluss
     else:
-        exp_time_str = '09:30:00'
+        # Annahme: HH:MM:SS vorliegend
+        return time_str
 
-    expiration_str = f"{expiration_date} {exp_time_str}"
+def year_fraction_with_exact_days(start_date, start_time, expiration_date, expiration_time):
+    start_time_parsed = parse_time_str(start_time)
+    expiration_time_parsed = parse_time_str(expiration_time)
+
+    start_str = f"{start_date} {start_time_parsed}"
+    expiration_str = f"{expiration_date} {expiration_time_parsed}"
 
     start_dt = datetime.strptime(start_str, '%Y-%m-%d %H:%M:%S')
     exp_dt = datetime.strptime(expiration_str, '%Y-%m-%d %H:%M:%S')
 
     delta_days = (exp_dt - start_dt).days + (exp_dt - start_dt).seconds / (24 * 3600)
-    year_basis = 365  # oder 365.25 für Schaltjahre
+
+    year_basis = 365.25  # Berücksichtigt Schaltjahre
 
     return delta_days / year_basis
 
