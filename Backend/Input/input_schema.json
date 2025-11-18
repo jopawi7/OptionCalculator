@@ -40,7 +40,6 @@
     },
     "interest_rate": {
       "type": "number"
-      // Optional: "minimum": -1 für Negativzinsen falls benötigt
     },
     "average_type": {
       "type": "string",

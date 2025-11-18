@@ -15,29 +15,29 @@ def calculate_year_fraction(start_dt, end_dt):
 
 def normalize_interest_rate(x):
     """
-    Treats an input value like 1.5 as 1.5%, converting it to a decimal (0.015) if above 1; leaves values ≤ 1 unchanged.
+    1.5 -> 0.015 ; -1.5 -> -0.015
+    0.05 stays 0.05 ; -0.005 stays -0.005
     """
     x = float(x)
-    return x / 100.0 if x > 1 else x
+    return x / 100.0 if abs(x) > 1 else x
+
 
 def parse_time_string(time_string: str):
-    """
-    Converts time string into datetime.time format.
-    Handles: (HH:MM:SS), (am/pm)
-    """
     if not time_string:
-        return time(0, 0,0)
+        return time(0, 0, 0)
     tstr = str(time_string).strip().lower()
-    if tstr in {"am"}:
-        return time(9, 30,0)
-    if tstr in {"pm"}:
-        return time(15, 30,0)
-    for fmt in ["%H:%M:%S"]:
-        try:
-            return datetime.strptime(tstr, fmt).time()
-        except ValueError:
-            continue
-    return time(0, 0,0)
+    if tstr == "am":
+        return time(9, 30, 0)   # or whatever mapping you intend
+    if tstr == "pm":
+        return time(15, 30, 0)  # ditto
+
+    try:
+        return datetime.strptime(tstr, "%H:%M:%S").time()
+    except ValueError as e:
+        raise ValueError(
+            f"Invalid time string: {time_string!r}. Expected 'HH:MM:SS' or 'am'/'pm'."
+        ) from e
+
 
 def calculate_present_value_dividends(dividend_list, start_date, expiry_date, risk_free_rate):
     """
@@ -60,6 +60,17 @@ def calculate_present_value_dividends(dividend_list, start_date, expiry_date, ri
             T = calculate_year_fraction(start_date, pay_date)
             present_value += float(single_dividend["amount"]) * np.exp(-risk_free_rate * T)
     return present_value
+
+def calc_continuous_dividend_yield(stock_price, pv_dividends, time_to_maturity):
+    # Falls keine Dividenden oder Laufzeit sehr kurz, ist die Rendite null
+    if pv_dividends < 1e-12 or time_to_maturity < 1e-12:
+        return 0.0
+    try:
+        q = - (1.0 / time_to_maturity) * np.log((stock_price - pv_dividends) / stock_price)
+    except Exception:
+        q = 0.0
+    return q
+
 
 def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time):
     """

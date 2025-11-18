@@ -33,11 +33,11 @@ def calculate_option():
 
 
     #TODO – Code input dialog and write Json Schema
-    choice = input("Use JSON file input? (y/n): ").strip().lower()
+    #choice = input("Use JSON file input? (y/n): ").strip().lower()
 
-    if choice == "n":
+    #if choice == "n":
         #small and capital letters do not matter at this point
-        create_or_update_input_json()
+    #    create_or_update_input_json()
 
 
 
@@ -45,7 +45,8 @@ def calculate_option():
 
 
 
-    #Transform all non-monthly Stings to lowercase
+
+    #Transform all Stings to lowercase
     input_obj['type'] = input_obj['type'].lower()
     input_obj['exercise_style'] = input_obj['exercise_style'].lower()
     input_obj['start_time'] = input_obj['start_time'].lower()
@@ -53,14 +54,12 @@ def calculate_option():
     input_obj['average_type'] = input_obj['average_type'].lower()
 
     #TODO - valid date
-
-
     #Validate that Object fits to our input_schema.json
     try:
         jsonschema.validate(instance=input_obj, schema=input_schema)
         print("The input is valid! You are only seconds away from the option price.")
     except jsonschema.ValidationError as e:
-        print("Something in the JSON is invalid:", e.message)
+        raise
 
     # Select the corresponding calculator and calculate results
     output_obj = None
@@ -85,8 +84,7 @@ def calculate_option():
     try:
         jsonschema.validate(instance=output_obj, schema=output_schema)
     except jsonschema.ValidationError as e:
-        print("Either an error occurred during the calculation or no object was returned:", e.message)
-
+        raise
 
     print("")
     print("----- Result Summary -----")

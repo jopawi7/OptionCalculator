@@ -1,19 +1,19 @@
 {
   "type": "call",
-  "exercise_style": "asian",
-  "start_date": "2025-11-16",
-  "start_time": "am",
+  "exercise_style": "european",
+  "start_date": "2025-11-18",
+  "start_time": "14:53:00",
   "expiration_date": "2026-04-30",
-  "expiration_time": "am",
+  "expiration_time": "PM",
   "strike": 100,
-  "stock_price": 299,
+  "stock_price": 100,
   "volatility": 0.20,
   "interest_rate": 1.5,
   "average_type": "arithmetic",
   "number_of_steps": 100,
-  "number_of_simulations":  10000,
+  "number_of_simulations":  1000,
   "dividends": [
-    { "date": "2025-11-20", "amount": 1.0 },
-    { "date": "2025-11-21", "amount": 2.0 }
+    { "date": "2025-11-28", "amount": 1.0 },
+    { "date": "2026-02-19", "amount": 1.0 }
   ]
 }
