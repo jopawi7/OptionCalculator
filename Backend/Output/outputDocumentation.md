@@ -1,4 +1,4 @@
-The output is always provided in the following JSON format:
+The output is always provided in the following JSON format. NEVER remove keys in output.json
 {
   "theoretical_price": float,
   "delta": number,

@@ -1,4 +1,4 @@
-For the input.json file only the following structure is accepted:
+For the input.json file only the following structure is accepted. NEVER remove keys in input.json
 {
   "type": "call" | "put",
   "exercise_style": "american" | "european" | "asian" | "binary",
@@ -6,8 +6,8 @@ For the input.json file only the following structure is accepted:
   "start_time": "HH:MM:SS" | "AM" | "PM" | "am" | "Am" |...,
   "expiration_date": "YYYY-MM-DD",
   "expiration_time": "HH:MM:SS" | "AM" | "PM" | "am" | "Am" |...,
-  "strike": float,
-  "stock_price": float,
+  "strike": float, (use point for decimal places)
+  "stock_price": float, (use point for decimal places)
   "volatility": float,
   "interest_rate": float,
   "average_type": "arithmetic" | "geometric",

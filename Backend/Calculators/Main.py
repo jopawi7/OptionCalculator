@@ -15,7 +15,7 @@ from ValidateInput import *
 
 
 def calculate_option():
-    print("Hi, welcome to our Option Calculator! ")
+    print("Hi, welcome to our Option Calculator!\n")
 
     #Create paths to input and output file
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -31,13 +31,38 @@ def calculate_option():
         input_schema = json.load(f)
 
 
-
     #TODO – Code input dialog and write Json Schema
-    #choice = input("Use JSON file input? (y/n): ").strip().lower()
+    print(
+        "Do you want to enter new data (type 'new') or use the existing data in input.json (type 'json')?\n"
+        "If you put data directly into the JSON file, please adhere strictly to the input_schema; otherwise, the calculation will not run.\n"
+    )
 
-    #if choice == "n":
-        #small and capital letters do not matter at this point
-    #    create_or_update_input_json()
+    while True:
+        choice = input("Your choice (new/json): ").strip().lower()
+
+        if choice in ("new", "json"):
+            break
+        else:
+            print("Invalid input. Please type 'new' or 'json' to proceed.")
+
+
+    #If new input dialog make dialog... else skip:
+    if choice == "new":
+        input_obj['type'] = ask_until_valid_string("Which option type do you want to calculate? (call|put): ", {"call", "put"}).lower()
+        input_obj['exercise_style'] = ask_until_valid_string("Which exercise style do you want (american|european|asian|binary): )", {"american", "european", "asian", "binary"} ).lower()
+
+
+        while True:
+            input_obj['start_date'] = ask_until_valid_date("When does the option start? (YYYY-MM-DD): ")
+            input_obj['start_time'] = ask_until_valid_time("At what time does the option start? (HH:MM:SS or AM/PM): ")
+            input_obj['expiration_date'] = ask_until_valid_date("When does the option expire? (YYYY-MM-DD): ")
+            input_obj['expiration_time'] = ask_until_valid_time("At what time does the option expire? (HH:MM:SS or AM/PM): ")
+            if validate_start_expiration(input_obj['start_date'], input_obj['start_time'], input_obj['expiration_date'], input_obj['expiration_time']):
+                break
+            print("The start date must be before the expiration date.")
+
+        input_obj['stock_price'] = ask_until_valid_number("Enter stock price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
+        input_obj['strike'] = ask_until_valid_number("Enter strike price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
 
 
 
@@ -46,16 +71,27 @@ def calculate_option():
 
 
 
-    #Transform all Stings to lowercase
-    input_obj['type'] = input_obj['type'].lower()
-    input_obj['exercise_style'] = input_obj['exercise_style'].lower()
-    input_obj['start_time'] = input_obj['start_time'].lower()
-    input_obj['expiration_time'] = input_obj['expiration_time'].lower()
-    input_obj['average_type'] = input_obj['average_type'].lower()
 
-    #TODO - valid date
-    #Validate that Object fits to our input_schema.json
+        input_obj['volatility']
+        input_obj['interest_rate']
+        input_obj['dividends'] = []
+
+
+
+
+    else:
+        # Transform all Stings to lowercase if person wrote to json file. Otherwise this step happens directly when user inserts new value
+        input_obj['type'] = input_obj['type'].lower()
+        input_obj['exercise_style'] = input_obj['exercise_style'].lower()
+        input_obj['start_time'] = input_obj['start_time'].lower()
+        input_obj['expiration_time'] = input_obj['expiration_time'].lower()
+        input_obj['average_type'] = input_obj['average_type'].lower()
+
+
+    #Validate that Object fits to our input_schema.json, safe the updated object
     try:
+        with open(input_path, 'w', encoding='utf-8') as f:
+            json.dump(input_obj, f, ensure_ascii=False, indent=4)
         jsonschema.validate(instance=input_obj, schema=input_schema)
         print("The input is valid! You are only seconds away from the option price.")
     except jsonschema.ValidationError as e:
@@ -63,7 +99,7 @@ def calculate_option():
 
     # Select the corresponding calculator and calculate results
     output_obj = None
-    match input_obj['exercise_style'].lower():
+    match input_obj['exercise_style']:
         case "american":
             output_obj = calcOptionAmerican(input_obj)
         case "asian":
