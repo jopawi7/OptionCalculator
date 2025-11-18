@@ -3,7 +3,6 @@ import json
 import re
 from datetime import datetime
 
-
 #Function that ask for a valid answer until is valid
 def ask_until_valid_string(prompt, valid_options):
     valid_options = {opt.lower() for opt in valid_options}
@@ -104,7 +103,6 @@ def validate_interest_rate(value):
         raise ValueError("Interest rate must be a number.")
     return ir
 
-
 #Dividend handling:
 def ask_yes_no(prompt):
     while True:
@@ -151,8 +149,3 @@ def input_dividends(start_date, expiration_date):
         if not ask_yes_no("Add another dividend?"):
             break
     return dividends
-
-
-
-
-
