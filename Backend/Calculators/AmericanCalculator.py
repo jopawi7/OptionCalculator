@@ -110,9 +110,9 @@ def calculate_option_value(data):
               - interest_rate: Risk-free rate (can be in % or decimal)
               - volatility: Volatility
               - start_date: Start date (YYYY-MM-DD)
-              - start_time: Start time (HH:MM, HH:MM:SS, AM, PM, etc.)
+              - start_time: Start time (HH:MM, HH:MM:SS, am, pm, etc.)
               - expiration_date: Expiration date (YYYY-MM-DD)
-              - expiration_time: Expiration time
+              - expiration_time: Expiration time (HH:MM, HH:MM:SS, am, pm, etc.)
               - number_of_steps: Number of time steps (default 100)
               - number_of_simulations: Number of MC simulations (default 10000)
               - dividends: List of dividends (optional)
@@ -222,23 +222,25 @@ def calculate_option_value(data):
 if __name__ == "__main__":
     # Example data matching the new format
     data = {
-        "type": "call",
-        "exercise_style": "american",
-        "start_date": "2025-11-16",
-        "start_time": "17:22:34",
-        "expiration_date": "2026-04-30",
-        "expiration_time": "AM",
-        "strike": 100,
-        "stock_price": 299,
-        "volatility": 0.20,
-        "interest_rate": 1.5,
-        "number_of_steps": 100,
-        "number_of_simulations": 10000,
-        "dividends": [
-            {"date": "2025-11-20", "amount": 1.0},
-            {"date": "2025-11-21", "amount": 2.0}
-        ]
-    }
+  "type": "call",
+  "exercise_style": "american",
+  "start_date": "2025-11-16",
+  "start_time": "am",
+  "expiration_date": "2026-04-30",
+  "expiration_time": "am",
+  "strike": 100,
+  "stock_price": 299,
+  "volatility": 0.20,
+  "interest_rate": 1.5,
+  "average_type": "arithmetic",
+  "number_of_steps": 100,
+  "number_of_simulations":  10000,
+  "dividends": [
+    { "date": "2025-11-20", "amount": 1.0 },
+    { "date": "2025-11-21", "amount": 2.0 }
+  ]
+}
+
 
     result = calculate_option_value(data)
     print("Option Pricing Results:")

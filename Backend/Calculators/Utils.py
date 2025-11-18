@@ -23,14 +23,14 @@ def normalize_interest_rate(x):
 def parse_time_string(time_string: str):
     """
     Converts time string into datetime.time format.
-    Handles: (HH:MM), (HH:MM:SS), (AM/PM)
+    Handles: (HH:MM), (HH:MM:SS), (am/pm)
     """
     if not time_string:
         return time(0, 0)
-    tstr = str(time_string).strip().upper()
-    if tstr in {"AM"}:
+    tstr = str(time_string).strip().lower()
+    if tstr in {"am"}:
         return time(9, 30)
-    if tstr in {"PM"}:
+    if tstr in {"pm"}:
         return time(15, 30)
     for fmt in ["%H:%M", "%H:%M:%S", "%I:%M %p", "%I %p"]:
         try:

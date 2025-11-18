@@ -1,5 +1,6 @@
 from math import log, sqrt, exp, erf, pi
 from datetime import datetime
+from Backend.Calculators.Utils import *
 import json
 import os
 
@@ -66,10 +67,13 @@ def calculate_option_value(data):
     
     Q = 1.0 #à supprimer, rempalcer par 1 ou -1 
 
-    fmt = "%Y-%m-%d"
-    T = (datetime.strptime(data["expiration_date"], fmt) - 
-         datetime.strptime(data["start_date"], fmt)).days / 365.0
-    
+    T = calculate_time_to_maturity(
+        data["start_date"],
+        data.get("start_time", ""),
+        data["expiration_date"],
+        data.get("expiration_time", "")
+    )
+
     if T <= 0:
         raise ValueError("Expiration date must be after start date.")
 
