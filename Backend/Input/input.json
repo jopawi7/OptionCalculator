@@ -1,6 +1,6 @@
 {
     "type": "put",
-    "exercise_style": "american",
+    "exercise_style": "european",
     "start_date": "2025-11-18",
     "start_time": "16:51:14",
     "expiration_date": "2026-12-31",
