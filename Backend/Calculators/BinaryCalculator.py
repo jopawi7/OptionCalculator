@@ -1,6 +1,5 @@
 from math import log, sqrt, exp, erf, pi
 from datetime import datetime
-from Backend.Calculators.Utils import *
 import json
 import os
 
@@ -12,7 +11,8 @@ def N(x):
 
 def n(x):
     """PDF of the standard normal distribution."""
-    return (1.0 / sqrt(2.0 * pi)) * exp(-0.5 * x**2)
+    return (1.0 / sqrt(2.0 * pi)) * exp(-0.5 * x ** 2)
+
 
 def read_inputs_from_file(filename=None):
     """
@@ -43,10 +43,9 @@ def read_inputs_from_file(filename=None):
     return data
 
 
-
 def calculate_option_value(data):
     """
-    Compute price and Greeks for a binary (cash-or-nothing) option 
+    Compute price and Greeks for a binary (cash-or-nothing) option
     using Black-Scholes model.
     """
     opt_type = data.get("type", "").lower()
@@ -57,27 +56,24 @@ def calculate_option_value(data):
     K = data["strike"]
     sigma = data["volatility"]
     r = data["interest_rate"]
-    
+
     # Normalize dividends
     dividends = data.get("dividends", 0.0)
     if isinstance(dividends, list):
         q = sum(d.get("amount", 0.0) for d in dividends) / len(dividends) if dividends else 0.0
     else:
         q = float(dividends) if dividends else 0.0
-    
-    Q = 1.0 #à supprimer, rempalcer par 1 ou -1 
 
-    T = calculate_time_to_maturity(
-        data["start_date"],
-        data.get("start_time", ""),
-        data["expiration_date"],
-        data.get("expiration_time", "")
-    )
+    Q = 1.0  # à supprimer, rempalcer par 1 ou -1
+
+    fmt = "%Y-%m-%d"
+    T = (datetime.strptime(data["expiration_date"], fmt) -
+         datetime.strptime(data["start_date"], fmt)).days / 365.0
 
     if T <= 0:
         raise ValueError("Expiration date must be after start date.")
 
-    d2 = (log(S / K) + (r - q - 0.5 * sigma**2) * T) / (sigma * sqrt(T))
+    d2 = (log(S / K) + (r - q - 0.5 * sigma ** 2) * T) / (sigma * sqrt(T))
     Nd2 = N(d2)
     nd2 = n(d2)
 
@@ -88,23 +84,23 @@ def calculate_option_value(data):
     if opt_type == "call":
         price = Q * exp_rT * Nd2
         delta = Q * exp_rT * nd2 / S_sigma_sqrtT
-        gamma = -Q * exp_rT * nd2 * d2 / (S**2 * sigma**2 * T)
+        gamma = -Q * exp_rT * nd2 * d2 / (S ** 2 * sigma ** 2 * T)
         vega = -Q * exp_rT * nd2 * d2 / sigma
         rho = Q * T * exp_rT * Nd2
         theta = -Q * exp_rT * (
-            r * Nd2 + nd2 / (2 * T * sigma * sqrt_T) * 
-            (log(S / K) + (r - q + 0.5 * sigma**2) * T)
+                r * Nd2 + nd2 / (2 * T * sigma * sqrt_T) *
+                (log(S / K) + (r - q + 0.5 * sigma ** 2) * T)
         )
     else:
         Nmd2 = N(-d2)
         price = Q * exp_rT * Nmd2
         delta = -Q * exp_rT * nd2 / S_sigma_sqrtT
-        gamma = Q * exp_rT * nd2 * d2 / (S**2 * sigma**2 * T)
+        gamma = Q * exp_rT * nd2 * d2 / (S ** 2 * sigma ** 2 * T)
         vega = Q * exp_rT * nd2 * d2 / sigma
         rho = -Q * T * exp_rT * Nmd2
         theta = -Q * exp_rT * (
-            -r * Nmd2 + nd2 / (2 * T * sigma * sqrt_T) * 
-            (log(S / K) + (r - q + 0.5 * sigma**2) * T)
+                -r * Nmd2 + nd2 / (2 * T * sigma * sqrt_T) *
+                (log(S / K) + (r - q + 0.5 * sigma ** 2) * T)
         )
 
     return {
