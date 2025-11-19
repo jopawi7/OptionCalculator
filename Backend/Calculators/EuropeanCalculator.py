@@ -7,7 +7,8 @@ from datetime import datetime
 # Filename: EuropeanCalculator.py
 # LastUpdated: 2025-11-16
 # Our Model assumes constant interest rates and no forward interest rates compared to Cboe
-# Description: Calculate the value of European options based on Black-Scholes
+# Description: Calculate the value of European options based on Black-Scholes without considering dividends
+# Possibility to inclued Prepaid-Forward
 # ---------------------------------------------------------
 
 
@@ -41,7 +42,7 @@ def year_fraction_with_exact_days(start_date, start_time, expiration_date, expir
 
     delta_days = (exp_dt - start_dt).days + (exp_dt - start_dt).seconds / (24 * 3600)
 
-    year_basis = 365.25  # Berücksichtigt Schaltjahre
+    year_basis = 365
 
     return delta_days / year_basis
 
@@ -58,8 +59,7 @@ def calculate_option_value(data):
     interest_rate = data["interest_rate"] / 100.0
 
     T = year_fraction_with_exact_days(start_date, start_time, expiration_date, expiration_time)
-
-    S = stock_price  # Keine Dividendenanpassung
+    S = stock_price
 
     d1 = (np.log(S / strike) + (interest_rate + 0.5 * volatility ** 2) * T) / (volatility * np.sqrt(T))
     d2 = d1 - volatility * np.sqrt(T)
@@ -69,15 +69,17 @@ def calculate_option_value(data):
         delta = norm.cdf(d1)
         theta = (- (S * volatility * norm.pdf(d1)) / (2 * np.sqrt(T))
                  - interest_rate * strike * np.exp(-interest_rate * T) * norm.cdf(d2))
+        rho = strike * T * np.exp(-interest_rate * T) * norm.cdf(d2)
     else:
         price = strike * np.exp(-interest_rate * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
         delta = -norm.cdf(-d1)
         theta = (- (S * volatility * norm.pdf(d1)) / (2 * np.sqrt(T))
                  + interest_rate * strike * np.exp(-interest_rate * T) * norm.cdf(-d2))
+        rho = -strike * T * np.exp(-interest_rate * T) * norm.cdf(-d2)
 
     gamma = norm.pdf(d1) / (S * volatility * np.sqrt(T))
     vega = S * norm.pdf(d1) * np.sqrt(T)
-    rho = strike * T * np.exp(-interest_rate * T) * norm.cdf(d2 if option_type == "call" else -d2)
+
 
     return {
         "theoretical_price": round(price, 3),
