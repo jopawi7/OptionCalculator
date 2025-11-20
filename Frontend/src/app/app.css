@@ -280,33 +280,59 @@ h1 {
 /* Loading Mask */
 .loading-mask {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  text-align: center;
   z-index: 9999;
+  background: rgba(14, 15, 16, 0.60); /* War: rgba(0,0,0,0.3) */
+  color: var(--beige);
+  letter-spacing: 0.05em;
 }
 
-.spinner {
-  border: 8px solid #f3f3f3;
-  border-top: 8px solid #3498db;
+/* Kreis-Loader im style von index.html */
+.loading-mask .circle {
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  animation: spin 1s linear infinite;
+  background: linear-gradient(180deg, var(--beige), var(--pale-gold));
+  position: relative;
+  margin-bottom: 1rem;
+  animation: pulse 2.5s ease-in-out infinite;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
+.loading-mask .circle::after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  top: 49px;
+  height: 2px;
+  background: rgba(0,0,0,0.35);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
   }
-  100% {
-    transform: rotate(360deg);
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
   }
 }
 
+.loading-mask h1 {
+  font-size: 1.6rem;
+  margin: 0.5rem 0 0;
+  font-family: 'Playfair Display', serif;
+}
+
+.loading-mask p {
+  font-size: 0.9rem;
+  color: var(--pale-gold);
+  margin-top: 0.25rem;
+}
 
