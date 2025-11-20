@@ -1,6 +1,6 @@
 # OptionCalculator
 
-A sophisticated full-stack financial application for computing precise option prices using multiple advanced pricing models. Built with FastAPI (Python backend) and Angular (TypeScript frontend), OptionCalculator delivers real-time pricing, Greeks calculations, and comprehensive dividend handling for European, American, Asian, and Binary options.
+A sophisticated full-stack financial application for computing precise option prices using multiple advanced pricing models. Built with FastAPI (Python backend) and Angular (TypeScript frontend), OptionCalculator delivers real-time pricing, Greeks calculations, and comprehensive dividend handling.
 
 ## Table of Contents
 
@@ -25,14 +25,14 @@ A sophisticated full-stack financial application for computing precise option pr
 
 OptionCalculator implements a complete separation of concerns with a robust Python-based FastAPI backend handling all calculations and a responsive Angular frontend providing an intuitive user experience. The application validates all inputs against strict JSON schemas and supports multiple option pricing methodologies to accommodate different financial instruments and market conditions.
 
-The project structure separates the calculator logic from orchestration, enabling easy testing, maintenance, and extension. Each calculator implements its own pricing algorithm while conforming to a unified output interface of six Greeks plus theoretical price.
+The project structure separates the calculator logic from orchestration, enabling easy testing, maintenance, and extension. Each calculator implements its own pricing algorithm while conforming to a unified output interface of five Greeks plus theoretical price.
 
 ---
 
 ## Key Features
 
 - **Multiple Pricing Models**: Black-Scholes (European), Monte Carlo simulation (American), Monte Carlo simulation (Asian), and cash-or-nothing Binary options
-- **Greeks Calculation**: Complete set including Delta, Gamma, Vega, Rho, and Theta with finite-difference approximations
+- **Greeks Calculation**: Complete set including Delta, Gamma, Vega, Rho, and Theta.
 - **Flexible Time Input**: Support for both HH:MM:SS format and simplified AM/PM designations (market hours 09:30 AM = 09:30:00, 16:00 PM = 16:00:00)
 - **Dividend Management**: Support for both single ex-date dividends and recurring dividend schedules with day intervals
 - **Input Validation**: Strict JSON schema validation ensuring mathematical soundness (volatility > 0, dates in correct order, simulation counts within bounds)
@@ -55,8 +55,8 @@ OptionCalculator/
 │       ├── ValidateInput.py         # Input validation utilities
 │       ├── Utils.py                 # Helper functions
 │       ├── EuropeanCalculator.py    # Black-Scholes implementation
-│       ├── AmericanCalculator.py    # Monte Carlo with Longstaff-Schwartz
-│       ├── AsianCalculator.py       # Arithmetic/geometric averaging
+│       ├── AmericanCalculator.py    # Monte Carlo
+│       ├── AsianCalculator.py       # Monte Carlo arithmetic/geometric averaging
 │       ├── BinaryCalculator.py      # Cash-or-nothing options
 │       ├── Input/
 │       │   ├── input.json           # Sample input configuration
