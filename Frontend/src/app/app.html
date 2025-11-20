@@ -1,151 +1,154 @@
 <!-- @author: Jonas Patrick Witzel -->
 <div class="wrap">
 
-  <!-- 1) Header -->
-  <header class="hero" [class.show]="ready()">
-    <div>
-      <h1>Precise Option Pricing</h1>
-    </div>
-  </header>
-
-  <!-- 2) Body -->
-  <main>
-    <form class="calculator-container" [formGroup]="calculatorForm" (ngSubmit)="onSubmit()">
-
-      <!-- Option Type & Exercise Style -->
-      <div class="calc-row">
-        <div class="form-group">
-          <label>Option Type</label>
-          <div class="button-group">
-            <button type="button" class="cta-btn"
-                    [class.active]="formValue('type') === 'CALL'"
-                    (click)="setFormValue('type','CALL')">CALL</button>
-            <button type="button" class="cta-btn"
-                    [class.active]="formValue('type') === 'PUT'"
-                    (click)="setFormValue('type','PUT')">PUT</button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Exercise Style</label>
-          <div class="button-group">
-            <button type="button" class="cta-btn" [class.active]="formValue('style') === 'American'" (click)="setFormValue('style','American')">AMERICAN</button>
-            <button type="button" class="cta-btn" [class.active]="formValue('style') === 'European'" (click)="setFormValue('style','European')">EUROPEAN</button>
-            <button type="button" class="cta-btn" [class.active]="formValue('style') === 'Asian'"     (click)="setFormValue('style','Asian')">ASIAN</button>
-            <button type="button" class="cta-btn" [class.active]="formValue('style') === 'Binary'"    (click)="setFormValue('style','Binary')">BINARY</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Inputs -->
-      <div class="unified-grid">
-
-        <div class="form-group">
-          <label for="startDate">Start Date*</label>
-          <input id="startDate" type="date" formControlName="startDate">
-          <small class="error"
-                 *ngIf="calculatorForm.get('startDate')?.touched && calculatorForm.get('startDate')?.invalid">
-            Start date ist erforderlich.
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label for="startTime">Start Time*</label>
-          <input id="startTime" type="time" formControlName="startTime">
-          <small class="error"
-                 *ngIf="calculatorForm.get('startTime')?.touched && calculatorForm.get('startTime')?.invalid">
-            Start time ist erforderlich.
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label for="expirationDate">Expiration Date*</label>
-          <input id="expirationDate" type="date" formControlName="expirationDate">
-          <small class="error"
-                 *ngIf="calculatorForm.get('expirationDate')?.touched && calculatorForm.get('expirationDate')?.invalid">
-            Expiration date ist erforderlich.
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label for="strike">Option Strike*</label>
-          <input id="strike" type="number" formControlName="strike" min="0" step="0.01" inputmode="decimal">
-          <small class="error"
-                 *ngIf="calculatorForm.get('strike')?.touched && calculatorForm.get('strike')?.invalid">
-            Strike ist erforderlich und muss ≥ 0 sein.
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label for="stockPrice">Stock Price*</label>
-          <input id="stockPrice" type="number" formControlName="stockPrice" min="0" step="0.01" inputmode="decimal">
-          <small class="error"
-                 *ngIf="calculatorForm.get('stockPrice')?.touched && calculatorForm.get('stockPrice')?.invalid">
-            Stock price ist erforderlich und muss ≥ 0 sein.
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label for="volatility">Option Volatility %*</label>
-          <input id="volatility" type="number" formControlName="volatility" min="0" step="0.01" inputmode="decimal" placeholder="z. B. 20 für 20%">
-          <small class="error"
-                 *ngIf="calculatorForm.get('volatility')?.touched && calculatorForm.get('volatility')?.invalid">
-            Volatility ist erforderlich und muss ≥ 0 sein.
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label for="interestRate">Interest Rate %*</label>
-          <input id="interestRate" type="number" formControlName="interestRate" step="0.01" inputmode="decimal" placeholder="z. B. 3 für 3%">
-          <small class="error"
-                 *ngIf="calculatorForm.get('interestRate')?.touched && calculatorForm.get('interestRate')?.invalid">
-            Interest rate ist erforderlich.
-          </small>
-        </div>
-      </div>
-
-      <!-- Dividends -->
-      <div class="dividend-section">
-        <label>Dividends</label>
-        <div formArrayName="dividends" class="dividend-list">
-          <div *ngFor="let group of dividends.controls; let i = index"
-               [formGroupName]="i" class="dividend-item">
-            <input type="date" formControlName="date" placeholder="Date">
-            <input type="number" formControlName="amount" placeholder="Amount" min="0" step="0.01" inputmode="decimal">
-            <button type="button" class="remove-btn" (click)="removeDividend(i)">−</button>
-
-            <small class="error"
-                   *ngIf="group.get('date')?.touched && group.get('date')?.invalid">
-              Dividend-Date ist erforderlich.
-            </small>
-            <small class="error"
-                   *ngIf="group.get('amount')?.touched && group.get('amount')?.invalid">
-              Dividend-Amount ist erforderlich und muss ≥ 0 sein.
-            </small>
-          </div>
-        </div>
-        <button type="button" class="add-btn cta" (click)="addDividend()">+ Add Dividend</button>
-      </div>
-
-      <!-- Submit -->
-      <div class="cta-row">
-        <button class="cta" (click)="onSubmit()">Calculate</button>
-      </div>
-    </form>
-
-    <!-- Results -->
-<div class="results-container">
-  <h2>Results</h2>
-  <div class="unified-grid">
-    <div class="card"><h3>Theoretical Price</h3><p>{{ theoretical_price ?? '–' }}</p></div>
-    <div class="card"><h3>Delta</h3><p>{{ delta ?? '–' }}</p></div>
-    <div class="card"><h3>Gamma</h3><p>{{ gamma ?? '–' }}</p></div>
-    <div class="card"><h3>Rho</h3><p>{{ rho ?? '–' }}</p></div>
-    <div class="card"><h3>Theta</h3><p>{{ theta ?? '–' }}</p></div>
-    <div class="card"><h3>Vega</h3><p>{{ vega ?? '–' }}</p></div>
+<!-- 1) Header -->
+<header class="hero" [class.show]="ready()">
+  <div>
+    <h1>Precise Option Pricing</h1>
   </div>
+</header>
+
+<!-- Loading overlay -->
+<div *ngIf="isLoading" class="loading-mask">
+  <div class="spinner"></div>
 </div>
 
+<!-- 2) Body -->
+<main>
+  <form class="calculator-container" [formGroup]="calculatorForm" (ngSubmit)="onSubmit()">
 
-  </main>
+    <!-- Option Type & Exercise Style -->
+    <div class="calc-row">
+      <div class="form-group">
+        <label>Option Type</label>
+        <div class="button-group">
+          <button type="button" class="cta-btn" [class.active]="formValue('type') === 'CALL'" (click)="setFormValue('type','CALL')">CALL</button>
+          <button type="button" class="cta-btn" [class.active]="formValue('type') === 'PUT'" (click)="setFormValue('type','PUT')">PUT</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Exercise Style</label>
+        <div class="button-group">
+          <button type="button" class="cta-btn" [class.active]="formValue('style') === 'EUROPEAN'" (click)="setFormValue('style','EUROPEAN')">EUROPEAN</button>
+          <button type="button" class="cta-btn" [class.active]="formValue('style') === 'BINARY'" (click)="setFormValue('style','BINARY')">BINARY</button>
+          <button type="button" class="cta-btn" [class.active]="formValue('style') === 'AMERICAN'" (click)="setFormValue('style','AMERICAN')">AMERICAN</button>
+          <button type="button" class="cta-btn" [class.active]="formValue('style') === 'ASIAN'" (click)="setFormValue('style','ASIAN')">ASIAN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inputs -->
+    <div class="unified-grid">
+
+      <div class="form-group">
+        <label for="startDate">Start Date*</label>
+        <input id="startDate" type="date" formControlName="startDate">
+        <small class="error" *ngIf="calculatorForm.get('startDate')?.touched && calculatorForm.get('startDate')?.invalid">Start date ist erforderlich.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="startTime">Start Time*</label>
+        <input id="startTime" type="time" step="1" formControlName="startTime">
+        <small class="error" *ngIf="calculatorForm.get('startTime')?.touched && calculatorForm.get('startTime')?.invalid">Start time ist erforderlich.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="expirationDate">Expiration Date*</label>
+        <input id="expirationDate" type="date" formControlName="expirationDate">
+        <small class="error" *ngIf="calculatorForm.get('expirationDate')?.touched && calculatorForm.get('expirationDate')?.invalid">Expiration date ist erforderlich.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="expirationTime">Expiration Time*</label>
+        <input id="expirationTime" type="time" step="1" formControlName="expirationTime">
+        <small class="error" *ngIf="calculatorForm.get('expirationTime')?.touched && calculatorForm.get('expirationTime')?.invalid">Expiration time ist erforderlich.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="strike">Option Strike*</label>
+        <input id="strike" type="number" formControlName="strike" min="0" step="0.01" inputmode="decimal">
+        <small class="error" *ngIf="calculatorForm.get('strike')?.touched && calculatorForm.get('strike')?.invalid">Strike ist erforderlich und muss ≥ 0 sein.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="stockPrice">Stock Price*</label>
+        <input id="stockPrice" type="number" formControlName="stockPrice" min="0" step="0.01" inputmode="decimal">
+        <small class="error" *ngIf="calculatorForm.get('stockPrice')?.touched && calculatorForm.get('stockPrice')?.invalid">Stock price ist erforderlich und muss ≥ 0 sein.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="volatility">Option Volatility %*</label>
+        <input id="volatility" type="number" formControlName="volatility" min="0" step="0.01" inputmode="decimal" placeholder="z. B. 20 für 20%">
+        <small class="error" *ngIf="calculatorForm.get('volatility')?.touched && calculatorForm.get('volatility')?.invalid">Volatility ist erforderlich und muss ≥ 0 sein.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="interestRate">Interest Rate %*</label>
+        <input id="interestRate" type="number" formControlName="interestRate" step="0.01" inputmode="decimal" placeholder="z. B. 3 für 3%">
+        <small class="error" *ngIf="calculatorForm.get('interestRate')?.touched && calculatorForm.get('interestRate')?.invalid">Interest rate ist erforderlich.</small>
+      </div>
+
+      <!-- Bedingte Felder für American & Asian Style -->
+      <ng-container *ngIf="formValue('style') === 'AMERICAN' || formValue('style') === 'ASIAN'">
+        <div class="form-group">
+          <label for="number_of_steps">Number of Steps*</label>
+          <input id="number_of_steps" type="number" formControlName="number_of_steps" min="1" step="1" inputmode="numeric">
+          <small class="error" *ngIf="calculatorForm.get('number_of_steps')?.touched && calculatorForm.get('number_of_steps')?.invalid">Anzahl der Schritte ist erforderlich und muss ≥ 1 sein.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="number_of_simulations">Number of Simulations*</label>
+          <input id="number_of_simulations" type="number" formControlName="number_of_simulations" min="1" step="1" inputmode="numeric">
+          <small class="error" *ngIf="calculatorForm.get('number_of_simulations')?.touched && calculatorForm.get('number_of_simulations')?.invalid">Anzahl der Simulationen ist erforderlich und muss ≥ 1 sein.</small>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Average Type nur bei Asian Style außerhalb des unified-grid -->
+    <div *ngIf="formValue('style') === 'ASIAN'" class="form-group average-type-container">
+      <label for="average_type">Average Type*</label>
+      <select id="average_type" formControlName="average_type">
+        <option value="">Bitte wählen</option>
+        <option value="arithmetic">Arithmetic</option>
+        <option value="geometric">Geometric</option>
+      </select>
+      <small class="error" *ngIf="calculatorForm.get('average_type')?.touched && calculatorForm.get('average_type')?.invalid">Average type ist erforderlich.</small>
+    </div>
+
+    <!-- Dividends -->
+    <div class="dividend-section">
+      <label>Dividends</label>
+      <div formArrayName="dividends" class="dividend-list">
+        <div *ngFor="let group of dividends.controls; let i = index" [formGroupName]="i" class="dividend-item">
+          <input type="date" formControlName="date" placeholder="Date">
+          <input type="number" formControlName="amount" placeholder="Amount" min="0" step="0.01" inputmode="decimal">
+          <button type="button" class="remove-btn" (click)="removeDividend(i)">−</button>
+          <small class="error" *ngIf="group.get('date')?.touched && group.get('date')?.invalid">Dividend-Date ist erforderlich.</small>
+          <small class="error" *ngIf="group.get('amount')?.touched && group.get('amount')?.invalid">Dividend-Amount ist erforderlich und muss ≥ 0 sein.</small>
+        </div>
+      </div>
+      <button type="button" class="add-btn cta" (click)="addDividend()">+ Add Dividend</button>
+    </div>
+
+    <!-- Submit -->
+    <div class="cta-row">
+      <button type="submit" class="cta">Calculate</button>
+    </div>
+  </form>
+
+  <!-- Results -->
+  <div class="results-container">
+    <h2>Results</h2>
+    <div class="unified-grid">
+      <div class="card"><h3>Theoretical Price</h3><p>{{ theoretical_price ?? '–' }}</p></div>
+      <div class="card"><h3>Delta</h3><p>{{ delta ?? '–' }}</p></div>
+      <div class="card"><h3>Gamma</h3><p>{{ gamma ?? '–' }}</p></div>
+      <div class="card"><h3>Rho</h3><p>{{ rho ?? '–' }}</p></div>
+      <div class="card"><h3>Theta</h3><p>{{ theta ?? '–' }}</p></div>
+      <div class="card"><h3>Vega</h3><p>{{ vega ?? '–' }}</p></div>
+    </div>
+  </div>
+
+</main>
 </div>

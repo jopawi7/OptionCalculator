@@ -55,7 +55,7 @@ def calculate_option_value(data):
     S = data["stock_price"]
     K = data["strike"]
     sigma = data["volatility"]
-    r = data["interest_rate"]
+    r = data["interest_rate"]/100
 
     # Normalize dividends
     dividends = data.get("dividends", 0.0)
@@ -133,7 +133,7 @@ if __name__ == "__main__":
             "strike": float(input("Strike: ")),
             "stock_price": float(input("Stock price: ")),
             "volatility": float(input("Volatility (decimal, e.g. 0.2): ")),
-            "interest_rate": float(input("Interest rate (decimal, e.g. 0.05): ")),
+            "interest_rate": float(input("Interest rate (decimal, e.g. % 5 for 5%): ")),
             "dividends": float(input("Dividend yield (decimal, e.g. 0.00): ")),
         }
 

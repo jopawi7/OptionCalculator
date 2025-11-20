@@ -5,14 +5,15 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-root',
-  standalone: true,
   templateUrl: './app.html',
   styleUrls: ['./app.css'],
+  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, HttpClientModule]
 })
 export class AppComponent {
   ready = signal(false);
   calculatorForm!: FormGroup;
+  isLoading = false;
 
   theoretical_price: number | null = null;
   delta: number | null = null;
@@ -24,22 +25,24 @@ export class AppComponent {
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private cdr: ChangeDetectorRef  // Inject ChangeDetectorRef
+    private cdr: ChangeDetectorRef
   ) {
     this.calculatorForm = this.fb.group({
-      type: ['PUT'],
-      style: ['European'],
-      startDate: [new Date().toISOString().split('T')[0], Validators.required],
-      startTime: [new Date().toTimeString().slice(0, 5), Validators.required],
-      expirationDate: ['', Validators.required],
-      expirationTime: ['AM', Validators.required],
-      strike: [100.0, [Validators.required, Validators.min(0)]],
-      stockPrice: [300, [Validators.required, Validators.min(0)]],
-      volatility: [20.02, [Validators.required, Validators.min(0)]],
+      type: ['CALL', [Validators.required, Validators.pattern(/^(call|put)$/i)]],
+      style: ['EUROPEAN', [Validators.required, Validators.pattern(/^(american|european|asian|binary)$/i)]],
+      startDate: [new Date().toISOString().split('T')[0], [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
+      startTime: [new Date().toTimeString().slice(0, 8), [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/)]],
+      expirationDate: ['', [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
+      expirationTime: ['', [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/)]],
+      strike: [100.0, [Validators.required, Validators.min(0.01)]],
+      stockPrice: [300, [Validators.required, Validators.min(0.01)]],
+      volatility: [20, [Validators.required, Validators.min(0.0000001)]],
       interestRate: [1.5, [Validators.required]],
+      number_of_steps: [100, [Validators.required, Validators.min(1), Validators.max(1000)]],
+      number_of_simulations: [10000, [Validators.required, Validators.min(1), Validators.max(1000000)]],
+      average_type: ['arithmetic', [Validators.required, Validators.pattern(/^(arithmetic|geometric)$/i)]],
       dividends: this.fb.array([])
     });
-
     setTimeout(() => this.ready.set(true), 200);
   }
 
@@ -71,10 +74,12 @@ export class AppComponent {
       this.calculatorForm.markAllAsTouched();
       return;
     }
+    this.isLoading = true;
+    this.cdr.detectChanges();
 
     const v = this.calculatorForm.getRawValue();
 
-    const payload = {
+    const payload: any = {
       type: v.type.toLowerCase(),
       exercise_style: v.style.toLowerCase(),
       start_date: v.startDate,
@@ -83,8 +88,11 @@ export class AppComponent {
       expiration_time: v.expirationTime,
       strike: Number(v.strike),
       stock_price: Number(v.stockPrice),
-      volatility: Number(v.volatility),
+      volatility: Number(v.volatility) / 100,
       interest_rate: Number(v.interestRate),
+      average_type: v.average_type.toLowerCase(),
+      number_of_steps: v.number_of_steps,
+      number_of_simulations: v.number_of_simulations,
       dividends: (v.dividends ?? []).map((d: any) => ({ date: d.date, amount: Number(d.amount) }))
     };
 
@@ -96,10 +104,13 @@ export class AppComponent {
         this.rho = res.rho;
         this.theta = res.theta;
         this.vega = res.vega;
-        this.cdr.detectChanges();  // Manuell Change Detection triggern
+        this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error from backend:', err);
+        this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

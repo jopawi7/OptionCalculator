@@ -1,25 +1,21 @@
 {
     "type": "call",
-    "exercise_style": "european",
-    "start_date": "2025-11-19",
-    "start_time": "14:09:25",
+    "exercise_style": "american",
+    "start_date": "2025-11-18",
+    "start_time": "16:51:14",
     "expiration_date": "2026-12-31",
     "expiration_time": "am",
-    "strike": 100.0,
-    "stock_price": 150.0,
-    "volatility": 0.2,
-    "interest_rate": 1.5,
+    "strike": 110.0,
+    "stock_price": 120.0,
+    "volatility": 0.25,
+    "interest_rate": 3,
     "average_type": "arithmetic",
     "number_of_steps": 100,
     "number_of_simulations": 1000,
     "dividends": [
         {
             "date": "2025-11-28",
-            "amount": 1
-        },
-        {
-            "date": "2026-02-28",
-            "amount": 1
+            "amount": 1.3
         }
     ]
 }
