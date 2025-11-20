@@ -76,6 +76,7 @@ async def calculate(input_data: OptionInput):
 
 def calculateOptionWithData(input_obj):
     exercise_style = input_obj.get('exercise_style', '').lower()
+    print(input_obj)
     match exercise_style:
         case "american":
             return calcOptionAmerican(input_obj)

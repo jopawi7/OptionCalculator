@@ -31,20 +31,37 @@ def parse_time_str(time_str):
         return time_str
 
 def year_fraction_with_exact_days(start_date, start_time, expiration_date, expiration_time):
-    start_time_parsed = parse_time_str(start_time)
-    expiration_time_parsed = parse_time_str(expiration_time)
+    start_str = f"{start_date} {start_time}"
+    expiration_str = f"{expiration_date} {expiration_time}"
 
-    start_str = f"{start_date} {start_time_parsed}"
-    expiration_str = f"{expiration_date} {expiration_time_parsed}"
+    start_dt = datetime.strptime(start_str, "%Y-%m-%d %H:%M:%S")
+    exp_dt = datetime.strptime(expiration_str, "%Y-%m-%d %H:%M:%S")
 
-    start_dt = datetime.strptime(start_str, '%Y-%m-%d %H:%M:%S')
-    exp_dt = datetime.strptime(expiration_str, '%Y-%m-%d %H:%M:%S')
+    delta_days = (exp_dt - start_dt).total_seconds() / (24 * 3600)
+    return delta_days / 365.0
 
-    delta_days = (exp_dt - start_dt).days + (exp_dt - start_dt).seconds / (24 * 3600)
 
-    year_basis = 365
+def calculate_present_value_dividends(dividend_list, start_date, expiry_date, risk_free_rate):
+    if isinstance(start_date, str):
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    if isinstance(expiry_date, str):
+        expiry_date = datetime.strptime(expiry_date, "%Y-%m-%d")
 
-    return delta_days / year_basis
+    if not isinstance(dividend_list, list):
+        return 0.0
+
+    present_value = 0.0
+    for div in dividend_list:
+        pay_date = datetime.strptime(div["date"], "%Y-%m-%d")
+        if start_date < pay_date < expiry_date:
+            # übergib gültige Strings & Zeiten:
+            T = year_fraction_with_exact_days(
+                start_date.strftime("%Y-%m-%d"), "00:00:00",
+                pay_date.strftime("%Y-%m-%d"), "00:00:00"
+            )
+            present_value += float(div["amount"]) * np.exp(-risk_free_rate * T)
+    return present_value
+
 
 
 def calculate_option_value(data):
@@ -58,8 +75,11 @@ def calculate_option_value(data):
     volatility = data["volatility"]
     interest_rate = data["interest_rate"] / 100.0
 
+
     T = year_fraction_with_exact_days(start_date, start_time, expiration_date, expiration_time)
-    S = stock_price
+    S = stock_price - calculate_present_value_dividends(data["dividends"], start_date, expiration_date, interest_rate)
+
+    print(S)
 
     d1 = (np.log(S / strike) + (interest_rate + 0.5 * volatility ** 2) * T) / (volatility * np.sqrt(T))
     d2 = d1 - volatility * np.sqrt(T)
