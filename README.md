@@ -94,26 +94,6 @@ OptionCalculator/
 - Computes d1 and d2 parameters based on log-normal distribution
 - Greeks calculated via closed-form derivatives
 
-**Key Functions**:
-- `year_fraction_with_exact_days()`: Converts date/time pairs to fractional years (ACT/365)
-- `parse_time_str()`: Handles time parsing (HH:MM:SS or AM/PM)
-- `calculate_option_value()`: Main pricing engine returning price + 5 Greeks
-
-**Supported Inputs**:
-```python
-{
-    "type": "call" | "put",
-    "start_date": "YYYY-MM-DD",
-    "start_time": "HH:MM:SS" | "am" | "pm",
-    "expiration_date": "YYYY-MM-DD",
-    "expiration_time": "HH:MM:SS" | "am" | "pm",
-    "strike": float (≥ 0.01),
-    "stock_price": float (≥ 0.01),
-    "volatility": float (> 0, in decimal form),
-    "interest_rate": float (in percent, e.g., 1.5 for 1.5%)
-}
-```
-
 **Output**:
 ```python
 {
@@ -126,35 +106,12 @@ OptionCalculator/
 }
 ```
 
-**Performance**: ~2-5 milliseconds
 
 ---
 
 ### 2. AmericanCalculator.py
 
-**Algorithm**: Monte Carlo simulation with Longstaff-Schwartz early exercise algorithm
-
-**Methodology**:
-- Simulates multiple price paths using geometric Brownian motion
-- At each time step, determines optimal early exercise via regression-based continuation value estimation
-- Polynomial basis functions (1, S, S²) fitted to continuation values
-- Early exercise when intrinsic value exceeds expected continuation value
-
-**Key Functions**:
-- `monte_carlo_american_option()`: Core pricing engine with path simulation
-- `calculate_option_value()`: Wrapper handling input parsing and Greeks via finite differences
-- Helpers: `normalize_interest_rate()`, `parse_time_string()`, `calculate_present_value_dividends()`
-
-**Key Parameters**:
-- `number_of_steps`: Time discretization steps (default 100, max 1000)
-- `number_of_simulations`: MC paths (default 10,000, max 1,000,000)
-
-**Unique Features**:
-- Handles discrete dividends by adjusting initial stock price using present value
-- Robust regression fallback if polynomial fit encounters numerical issues
-- Bump-and-reprice for Greeks calculation with adaptive step sizing
-
-**Performance**: 100-500ms depending on step/simulation count
+**Algorithm**: Monte Carlo simulation 
 
 ---
 
@@ -172,18 +129,6 @@ OptionCalculator/
 - Applies antithetic variates (pairs of negatively correlated paths) for variance reduction
 - Control variate technique using geometric average as benchmark
 
-**Key Functions**:
-- `calculate_option_value()`: Dispatcher selecting geometric or arithmetic method
-- `_asian_geometric_closed_form_price()`: Analytical solution
-- `_asian_arithmetic_monte_carlo_price()`: Simulation with variance reduction
-- `_bump_and_reprice_asian()`: Numerical Greeks via perturbation
-- `_parse_datetime()`, `_expand_dividends()`, `_dividends_to_year_times()`: Helpers
-
-**Dividend Support**:
-- Single ex-date: `{"date": "YYYY-MM-DD", "amount": float}`
-- Recurring schedule: `{"start_date": "...", "day_interval": int, "amount": float, "end_date": "..."}`
-
-**Performance**: 50-500ms depending on averaging type and simulation count
 
 ---
 
@@ -196,19 +141,10 @@ OptionCalculator/
 - Otherwise zero value
 - Uses modified Black-Scholes formula with only d2 term
 
-**Key Functions**:
-- `read_inputs_from_file()`: File I/O with JSON path resolution
-- `calculate_option_value()`: Price computation with Greeks
-- `N()`: Standard normal CDF (error function based)
-- `n()`: Standard normal PDF
-
 **Special Considerations**:
 - Fixed payout Q = 1.0 (hardcoded, intended for future generalization)
 - Supports dividend list or scalar dividend yield
 - Normalized dividend handling via helper functions
-
-**Performance**: ~5-10 milliseconds
-
 ---
 
 ## Installation & Dependencies
