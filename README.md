@@ -14,4 +14,6 @@ To test our project there exists two possibilites:
 1) Go in the Frontend directory
 2) ng serve
 
+# Start with Makefile
+1) Go to the terminal and type make all
 
