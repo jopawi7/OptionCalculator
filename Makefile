@@ -1,22 +1,53 @@
-# Installiert Python-Abhängigkeiten im Backend
+# Identify Windows vs. Unix
+ifeq ($(OS),Windows_NT)
+    SHELL := cmd
+    .SHELLFLAGS := /Q /C
+    PY := python
+    PIP := pip
+    SEP := &
+    CD_BACK := cd ..
+    # PowerShell for more robust tasks if available
+    POWERSHELL := powershell -NoProfile -ExecutionPolicy Bypass
+    RM_DIST := $(POWERSHELL) Remove-Item -Recurse -Force -ErrorAction SilentlyContinue dist
+else
+    SHELL := /bin/sh
+    PY := python3
+    PIP := pip3
+    SEP := &&
+    CD_BACK := cd ..
+    RM_DIST := rm -rf dist
+endif
+
+# Packages
+BACKEND_DIR := Backend
+FRONTEND_DIR := Frontend
+
+.PHONY: backend-install frontend-install backend-start frontend-start frontend-clean all
+
+# Install python dependencies in the backend
 backend-install:
-	cd Backend && pip install -r requirements.txt
+	@cd $(BACKEND_DIR) $(SEP) $(PIP) install -r requirements.txt
 
-# Installiert Node-Abhängigkeiten für das Frontend
+# install node dependencies in the frontend
 frontend-install:
-	cd Frontend && npm install
+	@cd $(FRONTEND_DIR) $(SEP) npm install
 
-# Startet das Backend (FastAPI mit uvicorn)
+# Start the backend (FastAPI with uvicorn)
+# Note: Background processes are different under Windows/cmd; start separately for development
 backend-start:
-	cd Backend && uvicorn server:app --reload &
+ifeq ($(OS),Windows_NT)
+	@cd $(BACKEND_DIR) $(SEP) $(PY) -m uvicorn server:app --reload
+else
+	@cd $(BACKEND_DIR) $(SEP) uvicorn server:app --reload &
+endif
 
-# Startet das Frontend (Angular)
+# Starts the Angular Frontend
 frontend-start:
-	cd Frontend && ng serve
+	@cd $(FRONTEND_DIR) $(SEP) npx ng serve
 
-# Bereinigt Angular Build-Files ggf.
+# Cleans Angular build files
 frontend-clean:
-	cd Frontend && rm -rf dist
+	@cd $(FRONTEND_DIR) $(SEP) $(RM_DIST)
 
-# Alles mit einem Befehl: Erst installieren, dann beide Server starten
+# Build everything with make all
 all: backend-install frontend-install backend-start frontend-start
