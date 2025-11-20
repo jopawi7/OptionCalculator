@@ -48,8 +48,8 @@ def calculate_option():
 
     #If new input dialog make dialog... else skip:
     if choice == "new":
-        input_obj['type'] = ask_until_valid_string("Which option type do you want to calculate? (call|put): ", {"call", "put"}).lower()
-        input_obj['exercise_style'] = ask_until_valid_string("Which exercise style do you want (american|european|asian|binary): ", {"american", "european", "asian", "binary"} ).lower()
+        input_obj['type'] = ask_until_valid_string("Which option type do you want to calculate? (call|put): ", {"call", "put"})
+        input_obj['exercise_style'] = ask_until_valid_string("Which exercise style do you want (american|european|asian|binary): ", {"american", "european", "asian", "binary"} )
 
 
         while True:
@@ -81,7 +81,7 @@ def calculate_option():
                 print(f"Error: {e}")
 
         if input_obj['exercise_style'] == 'asian':
-            input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"}).lower()
+            input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})
 
         if input_obj['exercise_style'] == 'asian' or input_obj['exercise_style'] == 'american':
             input_obj['number_of_steps'] = ask_until_valid_integer("Enter number of steps (>= 1) for MC-Simulation: ", minimum=1,

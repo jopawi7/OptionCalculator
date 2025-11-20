@@ -1,9 +1,7 @@
-import os
-import json
 import re
 from datetime import datetime
 
-#Function that ask for a valid answer until is valid
+#Asks until the string is valid
 def ask_until_valid_string(prompt, valid_options):
     valid_options = {opt.lower() for opt in valid_options}
     while True:
@@ -12,7 +10,7 @@ def ask_until_valid_string(prompt, valid_options):
             return val
         print(f"Invalid input. Please enter one of: {', '.join(valid_options)}.")
 
-
+#Asks until the date is in a valid date formal
 def ask_until_valid_date(prompt):
     date_pattern = r"^\d{4}-\d{2}-\d{2}$"
     regex = re.compile(date_pattern)
@@ -22,7 +20,7 @@ def ask_until_valid_date(prompt):
             return val
         print("Invalid date format. Please use YYYY-MM-DD.")
 
-
+#Asls until the time is in a valid format
 def ask_until_valid_time(prompt):
     time_pattern = r"^(?:([01]\d|2[0-3]):[0-5]\d:[0-5]\d|[aA][mM]|[pP][mM])$"
     regex = re.compile(time_pattern)
@@ -32,7 +30,7 @@ def ask_until_valid_time(prompt):
             return val
         print("Invalid time format. Please use HH:MM:SS (24h) or am/pm.")
 
-
+#Asks until number is valid
 def ask_until_valid_number(prompt, minimum=None, exclusive_minimum=False):
     while True:
         val_str = input(prompt).strip()
@@ -51,6 +49,7 @@ def ask_until_valid_number(prompt, minimum=None, exclusive_minimum=False):
         except ValueError:
             print("Invalid input. Please enter a valid number.")
 
+#Asks until is an integer and valid
 def ask_until_valid_integer(prompt, minimum=None, maximum=None):
     while True:
         val_str = input(prompt).strip()
@@ -67,7 +66,7 @@ def ask_until_valid_integer(prompt, minimum=None, maximum=None):
             print("Invalid input. Please enter a valid integer.")
 
 
-
+#Validate start_date before expiration date
 def validate_start_expiration(start_date, start_time, expiration_date, expiration_time):
     def parse_dt(date_str, time_str):
         # Zeitstrings wie „am“/„pm“ wandeln wir auf feste Zeiten um
@@ -75,7 +74,6 @@ def validate_start_expiration(start_date, start_time, expiration_date, expiratio
             time_str = '09:30:00'
         elif time_str.lower() == 'pm':
             time_str = '16:00:00'
-        # Ansonsten nehmen wir die genaue Zeit an
         return datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M:%S")
 
     start_dt = parse_dt(start_date, start_time)
@@ -83,6 +81,7 @@ def validate_start_expiration(start_date, start_time, expiration_date, expiratio
 
     return start_dt <= exp_dt
 
+#Validates volatility
 def validate_volatility(value):
     if value is None:
         raise ValueError("Volatility is missing.")
@@ -94,6 +93,7 @@ def validate_volatility(value):
         raise ValueError("Volatility must be greater than 0.")
     return vol
 
+#Validates interest rate
 def validate_interest_rate(value):
     if value is None:
         raise ValueError("Interest rate is missing.")
