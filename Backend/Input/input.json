@@ -9,6 +9,7 @@
     "stock_price": 120.0,
     "volatility": 0.25,
     "interest_rate": 3,
+    "average_type": "arithmetic",
     "number_of_steps": 100,
     "number_of_simulations": 1000,
     "dividends": [
