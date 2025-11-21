@@ -1,63 +1,42 @@
 # ---------------------------------------------------------
+# Filename: AsianCalculator.py
 # Description
-#   Pricing and Greeks for an ASIAN option.
+#   Pricing and Greeks for an ASIAN option with dividends.
 #   The function `calculate_option_value` expects a `data`
-#   dictionary similar to the CBOE option calculator inputs,
-#   plus a few extra fields for Asian options and Monte Carlo.
+#   dictionary similar to the other calculators.
 #
-# Notes
-#   - This module assumes `data` has already been loaded and
-#     validated elsewhere (for example, from a file).
-#   - The goal is to keep the pricing logic explicit and
-#     readable, not to hide steps behind abstractions.
+#   Dividends:
+#     - `data["dividends"]` is a list of dicts:
+#         {"date": "YYYY-MM-DD", "amount": float}
+#     - These discrete dividends are converted into a
+#       continuous dividend yield q using the Utils:
+#         calculate_present_value_dividends
+#         calc_continuous_dividend_yield
 # ---------------------------------------------------------
 
-from datetime import datetime, timedelta
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any
 import math
 import numpy as np
 
-
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     """
-    Compute the theoretical price and Greeks of an Asian option.
+    Compute the theoretical price and Greeks of an Asian option with dividends.
 
-    The input `data` should contain at least:
-      - type: "CALL" or "PUT"
-      - exercise_style: "American" or "European"
+    Required keys in `data`:
+      - type: "call" or "put"
+      - exercise_style: should be "asian"
       - start_date: "YYYY-MM-DD"
       - start_time: "HH:MM:SS" or "AM"/"PM"
       - expiration_date: "YYYY-MM-DD"
       - expiration_time: "HH:MM:SS" or "AM"/"PM"
       - strike: float
       - stock_price: float
-      - volatility: float in percent (e.g. 20.0 → 20%)
-      - interest_rate: float in percent (e.g. 1.5 → 1.5%)
-      - dividends: list of dividend entries (see helpers below)
-
-    Optional Asian-specific fields:
-      - average_type: "arithmetic" or "geometric" (default: "arithmetic")
-      - n_fixings: number of averaging points (default: 12)
-      - mc_sims: number of Monte Carlo paths (default: 100_000)
-      - mc_dt: Monte Carlo time step in years (default: T / n_fixings)
-      - seed: RNG seed for reproducibility (default: 42)
-      - dividend_yield: continuous dividend yield in percent
-                        (used in the geometric closed-form model)
-
-    Supported dividend formats in data["dividends"]:
-      1) Single ex-date:
-         {"date": "YYYY-MM-DD", "amount": float}
-      2) Recurrent schedule:
-         {"start_date": "YYYY-MM-DD",
-          "day_interval": int,
-          "amount": float,
-          "end_date": "YYYY-MM-DD" (optional)}
-         → expanded into multiple ex-dates.
-
-    Returns:
-      Dictionary with:
-        - "theoretical_price"
-        - "delta", "gamma", "rho", "theta", "vega"
+      - volatility: float (either %, e.g. 20, or decimal, e.g. 0.20)
+      - interest_rate: float (either %, e.g. 1.5, or decimal, e.g. 0.015)
+      - average_type: "arithmetic" or "geometric"
+      - number_of_steps / n_fixings: int
+      - number_of_simulations / mc_sims: int
+      - dividends: list of {"date": "YYYY-MM-DD", "amount": float}
     """
 
     # 1) Initialize outputs with safe defaults
@@ -68,7 +47,7 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     theta_sensitivity = 0.0
     vega_sensitivity  = 0.0
 
-    # 2) Basic logging (useful during development or debugging)
+    # 2) Basic logging (helpful during development)
     print(f"Option type: {data['type']}")
     print(f"Exercise style: {data['exercise_style']}")
     print(f"Start date: {data['start_date']}")
@@ -77,72 +56,62 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     print(f"Expiration time: {data['expiration_time']}")
     print(f"Strike: {data['strike']}")
     print(f"Stock price: {data['stock_price']}")
-    print(f"Volatility: {data['volatility']}")
-    print(f"Interest rate: {data['interest_rate']}")
+    print(f"Volatility (raw): {data['volatility']}")
+    print(f"Interest rate (raw): {data['interest_rate']}")
+    print(f"Average type: {data.get('average_type', 'arithmetic')}")
     print(f"Dividends: {data.get('dividends', [])}")
 
-    # 3) Parse dates and convert percentages to decimals
-    start_datetime = _parse_datetime(data["start_date"], data["start_time"])
-    expiration_datetime = _parse_datetime(data["expiration_date"], data["expiration_time"])
+    # 3) Time to maturity (ACT/365) via util
+    time_to_maturity_in_years = calculate_time_to_maturity(
+        data["start_date"],
+        data["start_time"],
+        data["expiration_date"],
+        data["expiration_time"],
+    )
 
-    if expiration_datetime <= start_datetime:
-        raise ValueError("Expiration must be after start date/time.")
-
-    # Time to maturity in years, ACT/365 convention
-    time_to_maturity_in_years = (
-        expiration_datetime - start_datetime
-    ).total_seconds() / (365.0 * 24 * 3600.0)
-
-    # Core numerical inputs
+    # 4) Core numerical inputs (normalize % vs decimals)
     initial_stock_price = float(data["stock_price"])
     strike_price = float(data["strike"])
-    volatility = float(data["volatility"]) / 100.0
-    risk_free_interest_rate = float(data["interest_rate"]) / 100.0
-    continuous_dividend_yield = float(data.get("dividend_yield", 0.0)) / 100.0
+    volatility = normalize_interest_rate(data["volatility"])
+    risk_free_interest_rate = normalize_interest_rate(data["interest_rate"])
 
-    # 4) Normalize dividend information
-    dividend_events_list = _expand_dividends(
-        data.get("dividends", []),
-        start_datetime=start_datetime,
-        end_datetime=expiration_datetime
+    # 5) Dividends: discrete list -> PV -> continuous yield q
+    dividends_list = data.get("dividends", [])
+    present_value_dividends = calculate_present_value_dividends(
+        dividends_list,
+        data["start_date"],
+        data["expiration_date"],
+        risk_free_interest_rate,
+    )
+    continuous_dividend_yield = calc_continuous_dividend_yield(
+        initial_stock_price,
+        present_value_dividends,
+        time_to_maturity_in_years,
     )
 
-    dividend_schedule_in_years = _dividends_to_year_times(
-        dividend_events_list,
-        start_datetime
-    )
+    print(f"Present value of dividends: {present_value_dividends}")
+    print(f"Implied continuous dividend yield q: {continuous_dividend_yield}")
 
-    # Keep only dividends between 0 and T
-    dividend_schedule_in_years = [
-        (time, amount)
-        for (time, amount) in dividend_schedule_in_years
-        if 0.0 < time <= time_to_maturity_in_years
-    ]
-
-    # 5) Read Asian option parameters and Monte Carlo settings
+    # 6) Asian parameters & Monte Carlo settings
     average_price_type = data.get("average_type", "arithmetic").lower()
 
-    number_of_fixings = int(data.get("number_of_steps", 12))
-    number_of_simulations = int(data.get("number_of_simulations", 100_000))
+    # allow both naming conventions
+    number_of_fixings = int(data.get("n_fixings", data.get("number_of_steps", 12)))
+    number_of_simulations = int(
+        data.get("mc_sims", data.get("number_of_simulations", 100_000))
+    )
     random_seed = int(data.get("seed", 42))
     monte_carlo_time_step_in_years = float(
         data.get(
             "mc_dt",
-            time_to_maturity_in_years / max(number_of_fixings, 1)
+            time_to_maturity_in_years / max(number_of_fixings, 1),
         )
     )
 
-    is_call_option = (data["type"].upper() == "CALL")
+    is_call_option = (data["type"].lower() == "call")
 
-    # 6) Choose pricing method based on averaging type
+    # 7) Choose pricing method based on averaging type
     if average_price_type == "geometric":
-
-        if dividend_schedule_in_years and continuous_dividend_yield == 0.0:
-            print(
-                "[NOTICE] Discrete dividends provided but dividend_yield (q) is 0. "
-                "The geometric closed-form with pure discrete dividends is only an approximation. "
-                "Consider using a non-zero dividend_yield or switching to Monte Carlo."
-            )
 
         option_price = _asian_geometric_closed_form_price(
             initial_stock_price,
@@ -152,28 +121,32 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
             volatility,
             time_to_maturity_in_years,
             number_of_fixings,
-            is_call=is_call_option
+            is_call=is_call_option,
         )
 
-        delta_sensitivity, gamma_sensitivity, vega_sensitivity, theta_sensitivity, rho_sensitivity = \
-            _bump_and_reprice_asian(
-                initial_stock_price,
-                strike_price,
-                risk_free_interest_rate,
-                continuous_dividend_yield,
-                volatility,
-                time_to_maturity_in_years,
-                number_of_fixings,
-                number_of_simulations,
-                monte_carlo_time_step_in_years,
-                random_seed,
-                average_price_type="geometric",
-                is_call=is_call_option,
-                dividend_schedule=dividend_schedule_in_years
-            )
+        (
+            delta_sensitivity,
+            gamma_sensitivity,
+            vega_sensitivity,
+            theta_sensitivity,
+            rho_sensitivity,
+        ) = _bump_and_reprice_asian(
+            initial_stock_price,
+            strike_price,
+            risk_free_interest_rate,
+            continuous_dividend_yield,
+            volatility,
+            time_to_maturity_in_years,
+            number_of_fixings,
+            number_of_simulations,
+            monte_carlo_time_step_in_years,
+            random_seed,
+            average_price_type="geometric",
+            is_call=is_call_option,
+        )
 
     else:
-        # Default: arithmetic average via Monte Carlo with discrete dividends
+        # Default: arithmetic average via Monte Carlo with continuous q
         option_price = _asian_arithmetic_monte_carlo_price(
             initial_stock_price,
             strike_price,
@@ -188,178 +161,69 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
             is_call=is_call_option,
             use_antithetic_variates=True,
             use_control_variate_technique=True,
-            dividend_schedule=dividend_schedule_in_years
         )
 
-        delta_sensitivity, gamma_sensitivity, vega_sensitivity, theta_sensitivity, rho_sensitivity = \
-            _bump_and_reprice_asian(
-                initial_stock_price,
-                strike_price,
-                risk_free_interest_rate,
-                continuous_dividend_yield,
-                volatility,
-                time_to_maturity_in_years,
-                number_of_fixings,
-                number_of_simulations,
-                monte_carlo_time_step_in_years,
-                random_seed,
-                average_price_type="arithmetic",
-                is_call=is_call_option,
-                dividend_schedule=dividend_schedule_in_years
-            )
+        (
+            delta_sensitivity,
+            gamma_sensitivity,
+            vega_sensitivity,
+            theta_sensitivity,
+            rho_sensitivity,
+        ) = _bump_and_reprice_asian(
+            initial_stock_price,
+            strike_price,
+            risk_free_interest_rate,
+            continuous_dividend_yield,
+            volatility,
+            time_to_maturity_in_years,
+            number_of_fixings,
+            number_of_simulations,
+            monte_carlo_time_step_in_years,
+            random_seed,
+            average_price_type="arithmetic",
+            is_call=is_call_option,
+        )
 
-    # 7) Package and round the result
+    # 8) Package and round the result
     return {
-        "theoretical_price": round(option_price, 3),
-        "delta": round(delta_sensitivity, 3),
-        "gamma": round(gamma_sensitivity, 3),
-        "rho": round(rho_sensitivity, 3),
-        "theta": round(theta_sensitivity, 3),
-        "vega": round(vega_sensitivity, 3),
+        "theoretical_price": round(option_price, 4),
+        "delta": round(delta_sensitivity, 4),
+        "gamma": round(gamma_sensitivity, 6),
+        "rho": round(rho_sensitivity, 4),
+        "theta": round(theta_sensitivity, 4),
+        "vega": round(vega_sensitivity, 4),
     }
-
-
-# =========================================================
-# Helpers: dates and dividends
-# =========================================================
-
-def _parse_datetime(date_string: str, time_string: str) -> datetime:
-    """
-    Convert a date string and a time string into a datetime object.
-
-    If time_string is "AM" or "PM", a default market time is used:
-      - "AM" → 09:30:00
-      - "PM" → 15:30:00
-
-    Otherwise, time_string is expected to be "HH:MM:SS".
-    """
-    if time_string in ("AM", "PM"):
-        full_time_string = "09:30:00" if time_string == "AM" else "15:30:00"
-    else:
-        full_time_string = time_string
-
-    return datetime.fromisoformat(f"{date_string} {full_time_string}")
-
-
-def _expand_dividends(dividend_definitions: List[Dict[str, Any]],
-                      start_datetime: datetime,
-                      end_datetime: datetime) -> List[Tuple[datetime, float]]:
-    """
-    Normalize raw dividend inputs into a list of (ex_dividend_datetime, amount).
-
-    Supports:
-      - Single ex-date:
-          {"date": "YYYY-MM-DD", "amount": float}
-      - Recurrent schedule:
-          {"start_date": "YYYY-MM-DD",
-           "day_interval": int,
-           "amount": float,
-           "end_date": "YYYY-MM-DD" (optional)}
-
-    Rules:
-      - Dividends outside [start_datetime, end_datetime] are ignored.
-      - If end_date is missing in a recurrent schedule, end_datetime is used.
-      - If several dividends fall on the same date, amounts are merged.
-    """
-    output_list: List[Tuple[datetime, float]] = []
-
-    for dividend_definition in dividend_definitions:
-
-        # Case 1: single fixed date
-        if "date" in dividend_definition:
-            ex_dividend_datetime = datetime.fromisoformat(
-                f"{dividend_definition['date']} 00:00:00"
-            )
-            amount = float(dividend_definition["amount"])
-
-            if start_datetime <= ex_dividend_datetime <= end_datetime and amount != 0.0:
-                output_list.append((ex_dividend_datetime, amount))
-
-            continue
-
-        # Case 2: recurrent schedule by day interval
-        if "start_date" in dividend_definition and "day_interval" in dividend_definition:
-            current_dividend_date = datetime.fromisoformat(
-                f"{dividend_definition['start_date']} 00:00:00"
-            )
-            day_interval_in_days = int(dividend_definition["day_interval"])
-            amount = float(dividend_definition["amount"])
-            last_dividend_date = datetime.fromisoformat(
-                f"{dividend_definition.get('end_date', end_datetime.date().isoformat())} 00:00:00"
-            )
-
-            if day_interval_in_days <= 0:
-                continue
-
-            while current_dividend_date <= last_dividend_date and current_dividend_date <= end_datetime:
-                if start_datetime <= current_dividend_date <= end_datetime and amount != 0.0:
-                    output_list.append((current_dividend_date, amount))
-
-                current_dividend_date += timedelta(days=day_interval_in_days)
-
-    # Sort by date and merge exact duplicates
-    output_list.sort(key=lambda x: x[0])
-
-    merged_dividend_list: List[Tuple[datetime, float]] = []
-    for ex_dividend_datetime, amount in output_list:
-        if merged_dividend_list and merged_dividend_list[-1][0] == ex_dividend_datetime:
-            merged_dividend_list[-1] = (
-                ex_dividend_datetime,
-                merged_dividend_list[-1][1] + amount
-            )
-        else:
-            merged_dividend_list.append((ex_dividend_datetime, amount))
-
-    return merged_dividend_list
-
-
-def _dividends_to_year_times(dividend_events: List[Tuple[datetime, float]],
-                             start_datetime: datetime) -> List[Tuple[float, float]]:
-    """
-    Convert (ex_dividend_datetime, amount) into (time_in_years, amount)
-    using an ACT/365 convention.
-    """
-    output_list: List[Tuple[float, float]] = []
-
-    for ex_dividend_datetime, amount in dividend_events:
-        time_from_start_in_years = (
-            ex_dividend_datetime - start_datetime
-        ).total_seconds() / (365.0 * 24 * 3600.0)
-
-        output_list.append((time_from_start_in_years, amount))
-
-    return output_list
 
 
 # =========================================================
 # Pricing: geometric closed-form and arithmetic Monte Carlo
 # =========================================================
 
-def _asian_geometric_closed_form_price(initial_stock_price, strike_price,
-                                       risk_free_interest_rate,
-                                       continuous_dividend_yield,
-                                       volatility, time_to_maturity_in_years,
-                                       number_of_fixings, is_call=True) -> float:
+def _asian_geometric_closed_form_price(
+    initial_stock_price,
+    strike_price,
+    risk_free_interest_rate,
+    continuous_dividend_yield,
+    volatility,
+    time_to_maturity_in_years,
+    number_of_fixings,
+    is_call=True,
+) -> float:
     """
     Closed-form price for a geometric Asian option with equally spaced fixings.
 
-    Assumptions:
-      - Black–Scholes dynamics with continuous dividend yield.
-      - Fixings are equally spaced in [0, T].
-      - Only the geometric average is modeled analytically.
-
-    With purely discrete dividends, there is no exact closed form; in that case,
-    this function relies on the continuous dividend yield as an approximation.
+    Uses Black–Scholes dynamics with continuous dividend yield q.
     """
     try:
         geometric_mean_drift = (
-            (risk_free_interest_rate - continuous_dividend_yield) -
-            0.5 * volatility**2
+            (risk_free_interest_rate - continuous_dividend_yield)
+            - 0.5 * volatility**2
         ) * (number_of_fixings + 1) / (2.0 * number_of_fixings)
 
         geometric_mean_volatility = volatility * math.sqrt(
-            (number_of_fixings + 1) * (2 * number_of_fixings + 1) /
-            (6.0 * number_of_fixings**2)
+            (number_of_fixings + 1)
+            * (2 * number_of_fixings + 1)
+            / (6.0 * number_of_fixings**2)
         )
 
         geometric_mean_spot_price = initial_stock_price * math.exp(
@@ -374,9 +238,13 @@ def _asian_geometric_closed_form_price(initial_stock_price, strike_price,
             return 0.0
 
         black_scholes_d1 = (
-            math.log(geometric_mean_spot_price / strike_price) +
-            (risk_free_interest_rate - continuous_dividend_yield +
-             0.5 * effective_volatility**2) * time_to_maturity_in_years
+            math.log(geometric_mean_spot_price / strike_price)
+            + (
+                risk_free_interest_rate
+                - continuous_dividend_yield
+                + 0.5 * effective_volatility**2
+            )
+            * time_to_maturity_in_years
         ) / effective_volatility
 
         black_scholes_d2 = black_scholes_d1 - effective_volatility
@@ -395,14 +263,18 @@ def _asian_geometric_closed_form_price(initial_stock_price, strike_price,
 
         if is_call:
             return discount_factor * (
-                geometric_mean_spot_price * dividend_carry_factor / discount_factor
+                geometric_mean_spot_price
+                * dividend_carry_factor
+                / discount_factor
                 * normal_cumulative_d1
                 - strike_price * normal_cumulative_d2
             )
         else:
             return discount_factor * (
                 strike_price * normal_cumulative_minus_d2
-                - geometric_mean_spot_price * dividend_carry_factor / discount_factor
+                - geometric_mean_spot_price
+                * dividend_carry_factor
+                / discount_factor
                 * normal_cumulative_minus_d1
             )
 
@@ -424,23 +296,11 @@ def _asian_arithmetic_monte_carlo_price(
     is_call=True,
     use_antithetic_variates=True,
     use_control_variate_technique=True,
-    dividend_schedule=None
 ):
     """
-    Monte Carlo pricer for an arithmetic Asian option with discrete dividends.
-
-    Steps:
-      1) Build a simulation time grid and a grid of fixing times.
-      2) Simulate the log-price under the risk-neutral measure:
-           d ln S = (r - q - 0.5 * sigma^2) dt + sigma dW.
-      3) At ex-dividend times, apply cash drops to S.
-      4) Record S at each fixing time and compute the arithmetic average.
-      5) Compute and discount the payoff.
-      6) Optionally use antithetic variates and a geometric control variate.
+    Monte Carlo pricer for an arithmetic Asian option
+    with continuous dividend yield q (no discrete price jumps).
     """
-    if dividend_schedule is None:
-        dividend_schedule = []
-
     random_number_generator = np.random.default_rng(random_seed)
 
     time_step_in_years = float(monte_carlo_time_step_in_years)
@@ -449,7 +309,7 @@ def _asian_arithmetic_monte_carlo_price(
 
     number_of_time_steps = max(
         1,
-        int(math.ceil(time_to_maturity_in_years / time_step_in_years))
+        int(math.ceil(time_to_maturity_in_years / time_step_in_years)),
     )
     time_step_in_years = time_to_maturity_in_years / number_of_time_steps
 
@@ -457,31 +317,20 @@ def _asian_arithmetic_monte_carlo_price(
         fixing_times_in_years = np.linspace(
             time_step_in_years,
             time_to_maturity_in_years,
-            num=number_of_fixings
+            num=number_of_fixings,
         )
     else:
         fixing_times_in_years = np.array([time_to_maturity_in_years])
 
-    dividend_times_in_years = np.array(
-        [t for (t, _) in dividend_schedule],
-        dtype=float
-    )
-    dividend_amounts = np.array(
-        [amount for (_, amount) in dividend_schedule],
-        dtype=float
-    )
-    time_tolerance_in_years = time_step_in_years / 2.0
-
     number_of_path_batches = (
-        number_of_simulations if not use_antithetic_variates
+        number_of_simulations
+        if not use_antithetic_variates
         else number_of_simulations // 2
     )
     if number_of_path_batches <= 0:
         number_of_path_batches = 1
 
-    discount_factor = math.exp(
-        -risk_free_interest_rate * time_to_maturity_in_years
-    )
+    discount_factor = math.exp(-risk_free_interest_rate * time_to_maturity_in_years)
     drift_per_time_step = (
         risk_free_interest_rate
         - continuous_dividend_yield
@@ -494,7 +343,6 @@ def _asian_arithmetic_monte_carlo_price(
     option_payoffs = []
 
     for _ in range(number_of_path_batches):
-
         standard_normal_random_numbers = random_number_generator.standard_normal(
             (1, number_of_time_steps)
         )
@@ -520,19 +368,6 @@ def _asian_arithmetic_monte_carlo_price(
 
                 current_time_in_years += time_step_in_years
 
-                # Apply dividends if current time is close to an ex-div time
-                if dividend_times_in_years.size > 0:
-                    dividend_time_mask = (
-                        np.abs(dividend_times_in_years - current_time_in_years)
-                        <= time_tolerance_in_years
-                    )
-
-                    if dividend_time_mask.any():
-                        total_dividend_amount = float(
-                            dividend_amounts[dividend_time_mask].sum()
-                        )
-                        stock_price = max(stock_price - total_dividend_amount, 1e-12)
-
                 # Capture fixings that have just been reached
                 while (
                     next_fixing_index < len(fixing_times_in_years)
@@ -547,7 +382,9 @@ def _asian_arithmetic_monte_carlo_price(
                 running_sum_of_fixing_prices += stock_price
                 next_fixing_index += 1
 
-            average_stock_price = running_sum_of_fixing_prices / max(number_of_fixings, 1)
+            average_stock_price = running_sum_of_fixing_prices / max(
+                number_of_fixings, 1
+            )
 
             if is_call:
                 option_payoff = max(average_stock_price - strike_price, 0.0)
@@ -569,10 +406,9 @@ def _asian_arithmetic_monte_carlo_price(
             volatility,
             time_to_maturity_in_years,
             number_of_fixings,
-            is_call=is_call
+            is_call=is_call,
         )
         # Hook for a proper control variate implementation.
-        # Currently we leave crude_monte_carlo_estimate unchanged if geometric_price > 0.
         if geometric_price > 0:
             pass
 
@@ -592,35 +428,20 @@ def _bump_and_reprice_asian(
     random_seed,
     average_price_type: str,
     is_call: bool,
-    dividend_schedule: List[Tuple[float, float]] = None
 ):
     """
     Compute Greeks for an Asian option using bump-and-reprice.
 
-    The same random seed is reused for each bump (common random
-    numbers) to reduce Monte Carlo noise.
-
-    Finite-difference scheme:
-      - Delta  ≈ [P(S + dS) - P(S - dS)] / (2 dS)
-      - Gamma  ≈ [P(S + dS) - 2 P(S) + P(S - dS)] / (dS^2)
-      - Vega   ≈ [P(sigma + dv) - P(sigma - dv)] / (2 dv)
-      - Rho    ≈ [P(r + dr) - P(r - dr)] / (2 dr)
-      - Theta  ≈ [P(T - dT) - P(T + dT)] / (2 dT)
-
-    For geometric averaging with no discrete dividends, the closed-form
-    geometric Asian price is used; otherwise, the Monte Carlo pricer is used.
+    Uses the same continuous dividend yield q for all bumped prices.
     """
     spot_price_shift = 0.01 * initial_stock_price if initial_stock_price != 0 else 0.01
     volatility_shift = 0.01 * volatility if volatility != 0 else 0.001
     interest_rate_shift = 0.0001
     time_shift_in_years = 1.0 / 365.0  # one day
 
-    def price_function(stock_price_,
-                       volatility_,
-                       interest_rate_,
-                       maturity_):
+    def price_function(stock_price_, volatility_, interest_rate_, maturity_):
 
-        if average_price_type == "geometric" and not dividend_schedule:
+        if average_price_type == "geometric":
             return _asian_geometric_closed_form_price(
                 stock_price_,
                 strike_price,
@@ -629,7 +450,7 @@ def _bump_and_reprice_asian(
                 volatility_,
                 maturity_,
                 number_of_fixings,
-                is_call=is_call
+                is_call=is_call,
             )
 
         return _asian_arithmetic_monte_carlo_price(
@@ -646,11 +467,13 @@ def _bump_and_reprice_asian(
             is_call=is_call,
             use_antithetic_variates=True,
             use_control_variate_technique=True,
-            dividend_schedule=dividend_schedule or []
         )
 
     base_option_price = price_function(
-        initial_stock_price, volatility, risk_free_interest_rate, time_to_maturity_in_years
+        initial_stock_price,
+        volatility,
+        risk_free_interest_rate,
+        time_to_maturity_in_years,
     )
 
     # Delta and Gamma (spot bumps)
@@ -658,22 +481,20 @@ def _bump_and_reprice_asian(
         initial_stock_price + spot_price_shift,
         volatility,
         risk_free_interest_rate,
-        time_to_maturity_in_years
+        time_to_maturity_in_years,
     )
     option_price_down_spot = price_function(
         initial_stock_price - spot_price_shift,
         volatility,
         risk_free_interest_rate,
-        time_to_maturity_in_years
+        time_to_maturity_in_years,
     )
     delta_sensitivity = (
         option_price_up_spot - option_price_down_spot
     ) / (2.0 * spot_price_shift)
 
     gamma_sensitivity = (
-        option_price_up_spot -
-        2.0 * base_option_price +
-        option_price_down_spot
+        option_price_up_spot - 2.0 * base_option_price + option_price_down_spot
     ) / (spot_price_shift**2)
 
     # Vega (volatility bumps)
@@ -681,13 +502,13 @@ def _bump_and_reprice_asian(
         initial_stock_price,
         volatility + volatility_shift,
         risk_free_interest_rate,
-        time_to_maturity_in_years
+        time_to_maturity_in_years,
     )
     option_price_down_volatility = price_function(
         initial_stock_price,
         volatility - volatility_shift,
         risk_free_interest_rate,
-        time_to_maturity_in_years
+        time_to_maturity_in_years,
     )
     vega_sensitivity = (
         option_price_up_volatility - option_price_down_volatility
@@ -698,13 +519,13 @@ def _bump_and_reprice_asian(
         initial_stock_price,
         volatility,
         risk_free_interest_rate + interest_rate_shift,
-        time_to_maturity_in_years
+        time_to_maturity_in_years,
     )
     option_price_down_interest_rate = price_function(
         initial_stock_price,
         volatility,
         risk_free_interest_rate - interest_rate_shift,
-        time_to_maturity_in_years
+        time_to_maturity_in_years,
     )
     rho_sensitivity = (
         option_price_up_interest_rate - option_price_down_interest_rate
@@ -713,23 +534,21 @@ def _bump_and_reprice_asian(
     # Theta (time to maturity bumps)
     shorter_time_to_maturity_in_years = max(
         time_to_maturity_in_years - time_shift_in_years,
-        1e-8
+        1e-8,
     )
-    longer_time_to_maturity_in_years = (
-        time_to_maturity_in_years + time_shift_in_years
-    )
+    longer_time_to_maturity_in_years = time_to_maturity_in_years + time_shift_in_years
 
     option_price_shorter_time = price_function(
         initial_stock_price,
         volatility,
         risk_free_interest_rate,
-        shorter_time_to_maturity_in_years
+        shorter_time_to_maturity_in_years,
     )
     option_price_longer_time = price_function(
         initial_stock_price,
         volatility,
         risk_free_interest_rate,
-        longer_time_to_maturity_in_years
+        longer_time_to_maturity_in_years,
     )
 
     theta_sensitivity = (
@@ -741,5 +560,5 @@ def _bump_and_reprice_asian(
         float(gamma_sensitivity),
         float(vega_sensitivity),
         float(theta_sensitivity),
-        float(rho_sensitivity)
+        float(rho_sensitivity),
     )
