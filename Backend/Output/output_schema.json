@@ -19,8 +19,8 @@
       "type": "number"
     },
     "theta": {
-      "type": "number",
-      "maximum": 0
+      "type": "number"
+
     },
     "vega": {
       "type": "number",

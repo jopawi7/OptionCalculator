@@ -14,5 +14,26 @@
     "number_of_simulations": 1000,
     "binary_payout": 120.0,
     "binary_payoff_structure": "cash",
-    "dividends": []
+    "dividends": [
+        {
+            "date": "2026-03-17",
+            "amount": 3.0
+        },
+        {
+            "date": "2026-03-17",
+            "amount": 3.0
+        },
+        {
+            "date": "2026-03-17",
+            "amount": 3.0
+        },
+        {
+            "date": "2026-03-17",
+            "amount": 3.0
+        },
+        {
+            "date": "2026-03-17",
+            "amount": 3.0
+        }
+    ]
 }
