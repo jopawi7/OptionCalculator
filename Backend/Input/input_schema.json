@@ -59,6 +59,10 @@
       "type": "number",
       "minimum": 0.01
     },
+    "binary_payoff_structure": {
+      "type": "string",
+      "enum": ["cash", "asset", "custom"]
+    },
     "dividends": {
       "type": "array",
       "items": {
@@ -93,6 +97,7 @@
     "number_of_steps",
     "number_of_simulations",
     "binary_payout",
+    "binary_payoff_structure",
     "dividends"
   ],
   "additionalProperties": false

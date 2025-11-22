@@ -13,6 +13,7 @@
     "number_of_steps": 100,
     "number_of_simulations": 1000,
     "binary_payout": 120.0,
+    "binary_payoff_structure": "",
     "dividends": [
         {
             "date": "2025-11-28",

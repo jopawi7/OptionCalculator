@@ -14,6 +14,7 @@ For the input.json file only the following structure is accepted. NEVER remove k
   "number_of_steps": int,
   "number_of_simulations": int,
   "binary_payout": float
+  "binary_payoff_structure": "cash" | "asset" | "custom"
   "dividends": \[
   { "date": "YYYY-MM-DD", "amount": float },
   { "date": "YYYY-MM-DD", "amount": float },

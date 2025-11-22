@@ -13,7 +13,7 @@ def calculate_year_fraction(start_dt, end_dt):
     """
     return max((end_dt - start_dt).total_seconds() / (365 * 24 * 3600), 0.0)
 
-def normalize_interest_rate(x):
+def normalize_interest_rate_or_volatility(x):
     """
     1.5 -> 0.015 ; -1.5 -> -0.015
     0.05 stays 0.05 ; -0.005 stays -0.005

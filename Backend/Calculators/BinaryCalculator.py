@@ -1,147 +1,134 @@
-from math import log, sqrt, exp, erf, pi
-from datetime import datetime
-import json
-import os
+from math import log, sqrt, exp
+from scipy.stats import norm
+from Utils import *
+from typing import Any, Dict
 
 
-def N(x):
-    """CDF of the standard normal distribution."""
-    return 0.5 * (1.0 + erf(x / sqrt(2.0)))
+def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
 
-
-def n(x):
-    """PDF of the standard normal distribution."""
-    return (1.0 / sqrt(2.0 * pi)) * exp(-0.5 * x ** 2)
-
-
-def read_inputs_from_file(filename=None):
     """
-    Read and normalize input parameters from a JSON file.
-    If no filename is provided, use ../Input/input.json relative to this script.
-    """
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-
-    if filename is None:
-        filename = os.path.join(base_dir, "..", "Input", "input.json")
-
-    filename = os.path.normpath(filename)
-
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f"JSON file not found: {filename}")
-
-    with open(filename, "r") as f:
-        data = json.load(f)
-
-    if isinstance(data.get("dividends"), list):
-        total_div = sum(d.get("amount", 0.0) for d in data["dividends"])
-        data["dividends"] = total_div / len(data["dividends"]) if data["dividends"] else 0.0
-    elif not isinstance(data.get("dividends"), (int, float)):
-        data["dividends"] = 0.0
-
-    data["type"] = data.get("type", "").lower()
-
-    return data
-
-
-def calculate_option_value(data):
-    """
-    Compute price and Greeks for a binary (cash-or-nothing) option
+    Compute price and Greeks for a binary (cash-or-nothing/asset-or-nothing) options
     using Black-Scholes model.
-    """
-    opt_type = data.get("type", "").lower()
-    if opt_type not in ["call", "put"]:
-        raise ValueError("Invalid option type. Must be 'call' or 'put'.")
 
-    S = data["stock_price"]
-    K = data["strike"]
-    sigma = data["volatility"]
-    r = data["interest_rate"]/100
+      Required keys in `data`:
+      - type: "call" or "put"
+      - exercise_style: should be "binary"
+      - start_date: "YYYY-MM-DD"
+      - start_time: "HH:MM:SS" or "am"/"pm"
+      - expiration_date: "YYYY-MM-DD"
+      - expiration_time: "HH:MM:SS" or "am"/"pm"
+      - strike: float
+      - stock_price: float
+      - volatility: float
+      - interest_rate: float
+      - binary_payout: float
+      - dividends: list of {"date": "YYYY-MM-DD", "amount": float}
+
+
+         Payoff structures supported:
+      - cash:   pays 1 at expiry if in the money
+      - custom: pays binary_payout at expiry if in the money
+      - asset:  pays S_T at expiry if in the money
+    """
+
+    # 1) Extract and calculate parameters
+    option_type = data["type"]
+    stock_price = data["stock_price"]
+    strike_price = data["strike"]
+    sigma = normalize_interest_rate_or_volatility(data['volatility'])
+    risk_free_rate = normalize_interest_rate_or_volatility(data['interest_rate'])
+    time_to_maturity = calculate_time_to_maturity(data["start_date"], data["start_time"], data["expiration_date"], data["expiration_time"])
+    payout_at_expiry = data.get("binary_payout", 1.0)
 
     # Normalize dividends
-    dividends = data.get("dividends", 0.0)
-    if isinstance(dividends, list):
-        q = sum(d.get("amount", 0.0) for d in dividends) / len(dividends) if dividends else 0.0
+    pv_dividends = calculate_present_value_dividends(
+        data.get("dividends", []),
+        data["start_date"],
+        data["expiration_date"],
+        risk_free_rate,
+    )
+
+    continuous_dividend_yield = calc_continuous_dividend_yield(
+        stock_price,
+        pv_dividends,
+        time_to_maturity,
+    )
+
+    payoff_type = data.get("binary_payoff_structure", "cash")
+    binary_payout = data.get("binary_payout", 1.0)
+
+    is_asset_or_nothing = payoff_type == "asset"
+    if payoff_type == "cash":
+        payout_at_expiry = 1.0
+    elif payoff_type == "custom":
+        payout_at_expiry = binary_payout
     else:
-        q = float(dividends) if dividends else 0.0
+        payout_at_expiry = None # not used for asset-or-nothing
 
-    Q = 1.0  # à supprimer, rempalcer par 1 ou -1
 
-    fmt = "%Y-%m-%d"
-    T = (datetime.strptime(data["expiration_date"], fmt) -
-         datetime.strptime(data["start_date"], fmt)).days / 365.0
+    #2) Black–Scholes core and greeks
+    sqrt_T = np.sqrt(time_to_maturity)
+    d1 = (np.log(stock_price / strike_price) + (risk_free_rate - continuous_dividend_yield + 0.5 * sigma * sigma) * time_to_maturity) / (sigma * sqrt_T)
+    d2 = d1 - sigma * sqrt_T
 
-    if T <= 0:
-        raise ValueError("Expiration date must be after start date.")
-
-    d2 = (log(S / K) + (r - q - 0.5 * sigma ** 2) * T) / (sigma * sqrt(T))
-    Nd2 = N(d2)
-    nd2 = n(d2)
-
-    sqrt_T = sqrt(T)
-    exp_rT = exp(-r * T)
-    S_sigma_sqrtT = S * sigma * sqrt_T
-
-    if opt_type == "call":
-        price = Q * exp_rT * Nd2
-        delta = Q * exp_rT * nd2 / S_sigma_sqrtT
-        gamma = -Q * exp_rT * nd2 * d2 / (S ** 2 * sigma ** 2 * T)
-        vega = -Q * exp_rT * nd2 * d2 / sigma
-        rho = Q * T * exp_rT * Nd2
-        theta = -Q * exp_rT * (
-                r * Nd2 + nd2 / (2 * T * sigma * sqrt_T) *
-                (log(S / K) + (r - q + 0.5 * sigma ** 2) * T)
-        )
+    if is_asset_or_nothing:
+        if option_type == "call":
+            base_price = stock_price * np.exp(-continuous_dividend_yield * time_to_maturity) * norm.cdf(d1)
+        else:
+            base_price = stock_price * np.exp(-continuous_dividend_yield * time_to_maturity) * norm.cdf(-d1)
     else:
-        Nmd2 = N(-d2)
-        price = Q * exp_rT * Nmd2
-        delta = -Q * exp_rT * nd2 / S_sigma_sqrtT
-        gamma = Q * exp_rT * nd2 * d2 / (S ** 2 * sigma ** 2 * T)
-        vega = Q * exp_rT * nd2 * d2 / sigma
-        rho = -Q * T * exp_rT * Nmd2
-        theta = -Q * exp_rT * (
-                -r * Nmd2 + nd2 / (2 * T * sigma * sqrt_T) *
-                (log(S / K) + (r - q + 0.5 * sigma ** 2) * T)
-        )
+        if option_type == "call":
+            base_price = payout_at_expiry * np.exp(-risk_free_rate * time_to_maturity) * norm.cdf(d2)
+        else:
+            base_price = payout_at_expiry * np.exp(-risk_free_rate * time_to_maturity) * norm.cdf(-d2)
 
+    # Greeks via finite differences
+    def price_shift(s_shift, r_shift, sigma_shift, t_shift):
+        sqrt_Ts = np.sqrt(t_shift)
+        d1s = (np.log(s_shift / strike_price) + (r_shift - continuous_dividend_yield + 0.5 * sigma_shift * sigma_shift) * t_shift) / (
+                    sigma_shift * sqrt_Ts)
+        d2s = d1s - sigma_shift * sqrt_Ts
+        if is_asset_or_nothing:
+            return (
+                s_shift * np.exp(-continuous_dividend_yield * t_shift) * norm.cdf(d1s)
+                if option_type == "call"
+                else s_shift * np.exp(-continuous_dividend_yield * t_shift) * norm.cdf(-d1s)
+            )
+        else:
+            disc = np.exp(-r_shift * t_shift)
+            coeff = payout_at_expiry
+            return (
+                coeff * disc * norm.cdf(d2s)
+                if option_type == "call"
+                else coeff * disc * norm.cdf(-d2s)
+            )
+
+    dS = max(1e-4 * stock_price, 1e-4)
+    price_up_S = price_shift(stock_price + dS, risk_free_rate, sigma, time_to_maturity)
+    price_down_S = price_shift(stock_price - dS, risk_free_rate, sigma, time_to_maturity)
+    delta = (price_up_S - price_down_S) / (2 * dS)
+    gamma = (price_up_S - 2 * base_price + price_down_S) / (dS ** 2)
+
+    dsigma = max(1e-4 * sigma, 1e-4)
+    price_up_sigma = price_shift(stock_price, risk_free_rate, sigma + dsigma, time_to_maturity)
+    price_down_sigma = price_shift(stock_price, risk_free_rate, sigma - dsigma, time_to_maturity)
+    vega = (price_up_sigma - price_down_sigma) / (2 * dsigma)
+
+    dr = max(1e-4 * max(abs(risk_free_rate), 1.0), 1e-4)
+    price_up_r = price_shift(stock_price, risk_free_rate + dr, sigma, time_to_maturity)
+    price_down_r = price_shift(stock_price, risk_free_rate - dr, sigma, time_to_maturity)
+    rho = (price_up_r - price_down_r) / (2 * dr)
+
+    dT = min(0.01, 0.25 * time_to_maturity) if time_to_maturity > 0.01 else time_to_maturity * 0.5
+    price_up_T = price_shift(stock_price, risk_free_rate, sigma, time_to_maturity + dT)
+    price_down_T = price_shift(stock_price, risk_free_rate, sigma, time_to_maturity - dT)
+    theta = -((price_up_T - price_down_T) / (2 * dT))
 
     return {
-        "theoretical_price": round(price, 3),
+        "theoretical_price": round(base_price, 3),
         "delta": round(delta, 3),
         "gamma": round(gamma, 3),
         "rho": round(rho, 3),
         "theta": round(theta, 3),
         "vega": round(vega, 3),
     }
-
-
-if __name__ == "__main__":
-    print("\nBinary Option Calculator")
-    choice = input("Use JSON file input? (y/n): ").strip().lower()
-
-    if choice == "y":
-        try:
-            data = read_inputs_from_file()
-            print("Loaded input from ../Input/input.json")
-        except Exception as e:
-            print(f"Error loading JSON: {e}")
-            exit(1)
-    else:
-        print("Enter parameters manually:\n")
-        data = {
-            "type": input("Option type (call / put): ").strip().lower(),
-            "start_date": input("Start date (YYYY-MM-DD): ").strip(),
-            "expiration_date": input("Expiration date (YYYY-MM-DD): ").strip(),
-            "strike": float(input("Strike: ")),
-            "stock_price": float(input("Stock price: ")),
-            "volatility": float(input("Volatility (decimal, e.g. 0.2): ")),
-            "interest_rate": float(input("Interest rate (decimal, e.g. % 5 for 5%): ")),
-            "dividends": float(input("Dividend yield (decimal, e.g. 0.00): ")),
-        }
-
-    print("\nRESULT")
-    try:
-        result = calculate_option_value(data)
-        for k, v in result.items():
-            print(f"{k}: {v}")
-    except Exception as e:
-        print(f"Calculation error: {e}")

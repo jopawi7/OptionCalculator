@@ -81,11 +81,9 @@ def calculate_option():
                 print(f"Error: {e}")
 
         if input_obj['exercise_style'] == 'binary':
-            cash_vs_asset_or_nothing = ask_until_valid_string("Binary option type (cash | asset):: ", {"cash", "asset"})
-            if cash_vs_asset_or_nothing == "cash":
+            input_obj['binary_payoff_structure'] = ask_until_valid_string("Binary option type (cash | asset | custom): ", {"cash", "asset", "custom"})
+            if input_obj['binary_payoff_structure'] == "custom":
                 input_obj['binary_payout'] = ask_until_valid_number("Enter binary payout (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
-            else:
-                input_obj['binary_payout'] =  input_obj['stock_price']
 
         if input_obj['exercise_style'] == 'asian':
             input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})
@@ -107,6 +105,7 @@ def calculate_option():
         input_obj['start_time'] = input_obj['start_time'].lower()
         input_obj['expiration_time'] = input_obj['expiration_time'].lower()
         input_obj['average_type'] = input_obj['average_type'].lower()
+        input_obj['binary_payoff_structure'] = input_obj['binary_payoff_structure'].lower()
 
 
     #Validate that Object fits to our input_schema.json, safe the updated object
