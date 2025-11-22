@@ -1,7 +1,25 @@
+from __future__ import annotations
+
 from typing import Dict, Any, Tuple
 import math
 import numpy as np
-from Utils import *
+
+from Utils import (
+    calculate_time_to_maturity,
+    normalize_interest_rate_or_volatility,
+    calculate_present_value_dividends,
+    calc_continuous_dividend_yield,
+)
+
+
+# ---------------------------------------------------------
+# Filename: AsianCalculator.py
+# Description:
+#   Pricing and Greeks for an ASIAN option with dividends.
+#   The main entry point is `calculate_option_value(data)`,
+#   using the same data structure as the other calculators.
+# ---------------------------------------------------------
+
 
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     """
@@ -11,58 +29,135 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
       - type: "call" or "put"
       - exercise_style: should be "asian"
       - start_date: "YYYY-MM-DD"
-      - start_time: "HH:MM:SS" or "am"/"pm"
+      - start_time: "HH:MM:SS" or "AM"/"PM"
       - expiration_date: "YYYY-MM-DD"
-      - expiration_time: "HH:MM:SS" or "am"/"pm"
+      - expiration_time: "HH:MM:SS" or "AM"/"PM"
       - strike: float
       - stock_price: float
-      - volatility: float
-      - interest_rate: float
+      - volatility: float (either %, e.g. 20, or decimal, e.g. 0.20)
+      - interest_rate: float (either %, e.g. 1.5, or decimal, e.g. 0.015)
       - average_type: "arithmetic" or "geometric"
-      - number_of_steps: int
-      - number_of_simulations: int
+      - number_of_steps / n_fixings: int
+      - number_of_simulations / mc_sims: int
       - dividends: list of {"date": "YYYY-MM-DD", "amount": float}
     """
 
     # =====================================================
-    # 1) EXTRACT AND CALCULATE PARAMETERS
+    # 1) DISPLAY INPUTS
     # =====================================================
-    option_type = data["type"]
+    option_type = str(data["type"]).lower()
+    exercise_style = str(data.get("exercise_style", "asian"))
     start_date = data["start_date"]
     start_time = data.get("start_time", "")
     expiration_date = data["expiration_date"]
     expiration_time = data.get("expiration_time", "")
-    initial_stock_price = data["stock_price"]
-    strike_price = data["strike"]
-    volatility_raw = data["volatility"]
-    interest_rate_raw = data["interest_rate"]
-    average_price_type = data.get("average_type")
+    stock_price_raw = float(data["stock_price"])
+    strike_price_raw = float(data["strike"])
+    volatility_raw = float(data["volatility"])
+    interest_rate_raw = float(data["interest_rate"])
+    average_price_type = str(data.get("average_type", "arithmetic")).lower()
     dividends_list = data.get("dividends", [])
-    number_of_fixings = data.get("number_of_steps", 100)
-    number_of_simulations = data.get("number_of_simulations", 1000)
-    random_seed = 42
+    number_of_fixings = int(data.get("n_fixings", data.get("number_of_steps", 12)))
+    number_of_simulations = int(
+        data.get("mc_sims", data.get("number_of_simulations", 100_000))
+    )
+    random_seed = int(data.get("seed", 42))
+
+    print("\n=== ASIAN OPTION INPUTS ===")
+    input_fields = {
+        "Option type": option_type,
+        "Exercise style": exercise_style,
+        "Start date": start_date,
+        "Start time": start_time,
+        "Expiration date": expiration_date,
+        "Expiration time": expiration_time,
+        "Stock price (S0)": stock_price_raw,
+        "Strike price (K)": strike_price_raw,
+        "Volatility (raw input)": volatility_raw,
+        "Interest rate (raw)": interest_rate_raw,
+        "Average type": average_price_type,
+        "Number of fixings": number_of_fixings,
+        "Number of simulations": number_of_simulations,
+        "Dividends": dividends_list,
+    }
+    for key, value in input_fields.items():
+        print(f"{key:25s}: {value}")
+
+    # =====================================================
+    # 2) EXTRACT AND CALCULATE PARAMETERS
+    # =====================================================
+
+    if option_type not in ("call", "put"):
+        raise ValueError("Option type must be 'call' or 'put' for Asian options.")
 
     # Time to maturity in years (ACT/365)
-    time_to_maturity = calculate_time_to_maturity( start_date,start_time,expiration_date,expiration_time)
+    time_to_maturity = calculate_time_to_maturity(
+        start_date,
+        start_time,
+        expiration_date,
+        expiration_time,
+    )
+
+    if time_to_maturity <= 0.0:
+        # At maturity, the average collapses to the current spot.
+        intrinsic = max(stock_price_raw - strike_price_raw, 0.0) if option_type == "call" \
+            else max(strike_price_raw - stock_price_raw, 0.0)
+        return {
+            "option_price": float(round(intrinsic, 6)),
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "vega": 0.0,
+            "rho": 0.0,
+        }
+
+    initial_stock_price = stock_price_raw
+    strike_price = strike_price_raw
 
     # Normalize volatility and interest rate (percent or decimal)
     volatility = normalize_interest_rate_or_volatility(volatility_raw)
     risk_free_rate = normalize_interest_rate_or_volatility(interest_rate_raw)
 
-    # Dividends: discrete list → PV → continuous yield q (always used for Asian)
-    present_value_dividends = calculate_present_value_dividends(dividends_list,start_date,expiration_date,risk_free_rate,)
+    if volatility <= 0.0:
+        intrinsic = max(initial_stock_price - strike_price, 0.0) if option_type == "call" \
+            else max(strike_price - initial_stock_price, 0.0)
+        return {
+            "option_price": float(round(intrinsic, 6)),
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "vega": 0.0,
+            "rho": 0.0,
+        }
 
-    continuous_dividend_yield = calc_continuous_dividend_yield(initial_stock_price,present_value_dividends,time_to_maturity)
+    # Dividends: discrete list → PV → continuous yield q (always used for Asian)
+    present_value_dividends = calculate_present_value_dividends(
+        dividends_list,
+        start_date,
+        expiration_date,
+        risk_free_rate,
+    )
+    continuous_dividend_yield = calc_continuous_dividend_yield(
+        initial_stock_price,
+        present_value_dividends,
+        time_to_maturity,
+    )
+
+    print(f"Present value of dividends: {present_value_dividends}")
+    print(f"Implied continuous dividend yield q: {continuous_dividend_yield}")
 
     # MC time step (if not provided, use uniform grid over T)
-    mc_dt = data.get("number_of_steps", time_to_maturity / max(number_of_fixings, 1))
+    mc_dt = float(
+        data.get(
+            "mc_dt",
+            time_to_maturity / max(number_of_fixings, 1),
+        )
+    )
 
     is_call_option = (option_type == "call")
 
-
-
     # =====================================================
-    # 2) PRICING (GEOMETRIC CLOSED FORM OR ARITHMETIC MC)
+    # 3) PRICING (GEOMETRIC CLOSED FORM OR ARITHMETIC MC)
     # =====================================================
 
     if average_price_type == "geometric":
@@ -123,16 +218,16 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
         )
 
     # =====================================================
-    # 3) RETURN RESULTS (MainCalculator.py handles printing)
+    # 4) RETURN RESULTS (Main.py handles printing)
     # =====================================================
 
     return {
-        "option_price": float(round(option_price, 3)),
-        "delta": float(round(delta, 3)),
-        "gamma": float(round(gamma, 3)),
-        "theta": float(round(theta, 3)),
-        "vega": float(round(vega, 3)),
-        "rho": float(round(rho, 3)),
+        "option_price": float(round(option_price, 6)),
+        "delta": float(round(delta, 6)),
+        "gamma": float(round(gamma, 6)),
+        "theta": float(round(theta, 6)),
+        "vega": float(round(vega, 6)),
+        "rho": float(round(rho, 6)),
     }
 
 
