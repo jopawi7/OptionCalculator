@@ -61,7 +61,7 @@ def calculate_option_value(data):
 
 
     # =====================================================
-    # 2) BLACK-SCHOLES CORE COMPUTATION (with dividend yield)
+    # 2) BLACK-SCHOLES CORE COMPUTATION
     # =====================================================
 
     d1 = (np.log(S / strike) + (interest_rate + 0.5 * volatility ** 2) * T) / (volatility * np.sqrt(T))

@@ -21,7 +21,7 @@
       "type": "number"
     },
     "vega": {
-      "type": "number",
+      "type": "number"
     }
   },
   "required": ["theoretical_price", "delta", "gamma", "rho", "theta", "vega"],
