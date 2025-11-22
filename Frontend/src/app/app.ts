@@ -37,7 +37,7 @@ export class AppComponent {
       strike: [100.0, [Validators.required, Validators.min(0.01)]],
       stockPrice: [120, [Validators.required, Validators.min(0.01)]],
       volatility: [20, [Validators.required, Validators.min(0.0000001)]],
-      interestRate: [1.5, [Validators.required]],
+      interestRate: [5, [Validators.required]],
       number_of_steps: [500, [Validators.required, Validators.min(1), Validators.max(1000)]],
       number_of_simulations: [10000, [Validators.required, Validators.min(1), Validators.max(100000)]],
       average_type: ['arithmetic', [Validators.required, Validators.pattern(/^(arithmetic|geometric)$/i)]],
