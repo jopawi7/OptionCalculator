@@ -81,6 +81,15 @@ def validate_start_expiration(start_date, start_time, expiration_date, expiratio
 
     return start_dt <= exp_dt
 
+#Validates prompt
+def prompt_and_validate(prompt_text, validate_func):
+    while True:
+        user_input = input(prompt_text)
+        try:
+            return validate_func(user_input)
+        except ValueError as e:
+            print(f"Error: {e}")
+
 #Validates volatility
 def validate_volatility(value):
     if value is None:

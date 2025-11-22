@@ -1,4 +1,6 @@
 import json
+from random import choice
+
 import jsonschema
 import os
 from AmericanCalculator import calculate_option_value as calcOptionAmerican
@@ -8,7 +10,7 @@ from EuropeanCalculator import calculate_option_value as calcOptionEuropean
 from ValidateInput import *
 
 # ---------------------------------------------------------
-# Filename: Main.py
+# Filename: MainCalculator.py
 # Created: 2025-11-17
 # Description: Reads input.json, Calculates the Corresponding results, Writes it into output.json
 # ---------------------------------------------------------
@@ -37,17 +39,9 @@ def calculate_option():
         "If you put data directly into the JSON file, please adhere strictly to the input_schema; otherwise, the calculation will not run.\n"
     )
 
-    while True:
-        choice = input("Your choice (new/json): ").strip().lower()
-
-        if choice in ("new", "json"):
-            break
-        else:
-            print("Invalid input. Please type 'new' or 'json' to proceed.")
-
 
     #If new input dialog make dialog... else skip:
-    if choice == "new":
+    if ask_until_valid_string("Your choice (new/json): ", {"new", "json"}) == "new":
         input_obj['type'] = ask_until_valid_string("Which option type do you want to calculate? (call|put): ", {"call", "put"})
         input_obj['exercise_style'] = ask_until_valid_string("Which exercise style do you want (american|european|asian|binary): ", {"american", "european", "asian", "binary"} )
 
@@ -64,22 +58,12 @@ def calculate_option():
         input_obj['stock_price'] = ask_until_valid_number("Enter stock price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
         input_obj['strike'] = ask_until_valid_number("Enter strike price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
 
-        while True:
-            vol_input = input("Enter volatility (> 0), e.g. 0.20 for 20%: ")
-            try:
-                input_obj['volatility'] = validate_volatility(vol_input)
-                break
-            except ValueError as e:
-                print(f"Error: {e}")
 
-        while True:
-            ir_input = input("Enter interest rate (percent), e.g. 1.5 for 1.5%: ")
-            try:
-                input_obj['interest_rate'] = validate_interest_rate(ir_input)
-                break
-            except ValueError as e:
-                print(f"Error: {e}")
+        input_obj['volatility'] = prompt_and_validate("Enter volatility (> 0), e.g. 0.20 for 20%: ", validate_volatility)
+        input_obj['interest_rate'] = prompt_and_validate("Enter interest rate (percent), e.g. 1.5 for 1.5%: ", validate_interest_rate)
 
+
+        #Special cases binary
         if input_obj['exercise_style'] == 'binary':
             input_obj['binary_payoff_structure'] = ask_until_valid_string("Binary option type (cash | asset | custom): ", {"cash", "asset", "custom"})
             if input_obj['binary_payoff_structure'] == "custom":
@@ -87,22 +71,24 @@ def calculate_option():
             if input_obj['binary_payoff_structure'] == "cash":
                 input_obj['binary_payout'] = 1.0
 
-
+        #Special cases asian
         if input_obj['exercise_style'] == 'asian':
             input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})
 
+        #Special cases asian and american
         if input_obj['exercise_style'] == 'asian' or input_obj['exercise_style'] == 'american':
             input_obj['number_of_steps'] = ask_until_valid_integer("Enter number of steps (>= 1) for MC-Simulation: ", minimum=1,
                                                                    maximum=1000)
             input_obj['number_of_simulations'] = ask_until_valid_integer("Enter number of simulations (>= 1): ",
-                                                                         minimum=1, maximum=1000000)
+                                                                         minimum=1, maximum=100000)
+
 
         input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
 
 
 
     else:
-        # Transform all Stings to lowercase if person wrote to json file. Otherwise this step happens directly when user inserts new value
+        # Transform all Stings to lowercase if person wrote to json.file. Otherwise this step happens directly when user inserts new value
         input_obj['type'] = input_obj['type'].lower()
         input_obj['exercise_style'] = input_obj['exercise_style'].lower()
         input_obj['start_time'] = input_obj['start_time'].lower()
@@ -119,6 +105,19 @@ def calculate_option():
         print("The input is valid! You are only seconds away from the option price.")
     except jsonschema.ValidationError as e:
         raise
+
+
+    #Print which data is used to calculate the option price
+
+
+
+
+
+
+
+
+
+
 
     # Select the corresponding calculator and calculate results
     output_obj = None
@@ -167,4 +166,3 @@ def calculate_option():
 
 if __name__ == '__main__':
    calculate_option()
-

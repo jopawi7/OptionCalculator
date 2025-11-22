@@ -123,7 +123,7 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
         )
 
     # =====================================================
-    # 3) RETURN RESULTS (Main.py handles printing)
+    # 3) RETURN RESULTS (MainCalculator.py handles printing)
     # =====================================================
 
     return {

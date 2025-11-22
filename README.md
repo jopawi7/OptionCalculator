@@ -240,7 +240,7 @@ Output: `Application bundle generated successfully. Local: http://localhost:4200
 
 ```bash
 cd Backend/Calculators
-python Main.py
+python MainCalculator.py
 ```
 
 Interactive prompts guide you through:
