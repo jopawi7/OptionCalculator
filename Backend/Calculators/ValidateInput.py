@@ -140,7 +140,7 @@ def ask_until_valid_amount(prompt):
 def input_dividends(start_date, expiration_date):
     dividends = []
     if not ask_yes_no("Do you want to enter dividends?"):
-        return []    # Wenn nein, leere Liste zurückgeben, alte Daten löschen
+        return []    # If no, return empty list
     print("Please enter dividends between the start and expiration dates:")
     while True:
         date = ask_until_valid_date_in_range("Enter dividend date (YYYY-MM-DD): ", start_date, expiration_date)

@@ -13,6 +13,7 @@ For the input.json file only the following structure is accepted. NEVER remove k
   "average_type": "arithmetic" | "geometric",
   "number_of_steps": int,
   "number_of_simulations": int,
+  "binary_payout": float
   "dividends": \[
   { "date": "YYYY-MM-DD", "amount": float },
   { "date": "YYYY-MM-DD", "amount": float },
@@ -20,7 +21,7 @@ For the input.json file only the following structure is accepted. NEVER remove k
 }
 
 ## Mathematical Constraints
-- The `stock_price` and `strike` values must be strictly positive:
+- The `stock_price` and `strike` values and `binary_payout` must be strictly positive:
   - \( S > 0 \)
   - \( K > 0 \)
 
