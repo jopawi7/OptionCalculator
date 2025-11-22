@@ -24,60 +24,28 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     """
 
     # =====================================================
-    # 1) DISPLAY INPUTS
+    # 1) EXTRACT AND CALCULATE PARAMETERS
     # =====================================================
-    print("\n=== BINARY OPTION INPUTS ===")
-    input_fields = {
-        "Option type": data["type"],
-        "Exercise style": data["exercise_style"],
-        "Start date": data["start_date"],
-        "Start time": data["start_time"],
-        "Expiration date": data["expiration_date"],
-        "Expiration time": data["expiration_time"],
-        "Stock price (S0)": data["stock_price"],
-        "Strike price (K)": data["strike"],
-        "Volatility (raw)": data["volatility"],
-        "Interest rate (raw)": data["interest_rate"],
-        "Dividends": data.get("dividends", []),
-        "Binary payoff type": data.get("binary_payoff_type", "cash"),
-        "Binary payout": data.get("binary_payout", 1.0),
-    }
-    for key, value in input_fields.items():
-        print(f"{key:25s}: {value}")
-
-    # =====================================================
-    # 2) EXTRACT AND CALCULATE PARAMETERS
-    # =====================================================
-    option_type = data["type"].lower()
-    S0 = float(data["stock_price"])
-    K = float(data["strike"])
-    sigma = normalize_interest_rate_or_volatility(float(data["volatility"]))
-    r = normalize_interest_rate_or_volatility(float(data["interest_rate"]))
+    option_type = data["type"]
+    S0 = data["stock_price"]
+    K = data["strike"]
+    sigma = normalize_interest_rate_or_volatility(data["volatility"])
+    r = normalize_interest_rate_or_volatility(data["interest_rate"])
     dividends_list = data.get("dividends", [])
 
-    T = calculate_time_to_maturity(
-        data["start_date"],
-        data["start_time"],
-        data["expiration_date"],
-        data["expiration_time"],
-    )
+    T = calculate_time_to_maturity(data["start_date"],data["start_time"],data["expiration_date"], data["expiration_time"], )
 
     pv_div = calculate_present_value_dividends(
-        dividends_list,
-        data["start_date"],
-        data["expiration_date"],
-        r,
-    )
-    q = calc_continuous_dividend_yield(
-        stock_price=S0,
-        pv_dividends=pv_div,
-        time_to_maturity=T,
-    )
+        dividends_list,data["start_date"],data["expiration_date"],r)
 
-    payoff_type = str(data.get("binary_payoff_type", "cash")).lower()
-    binary_payout = float(data.get("binary_payout", 1.0))
+    q = calc_continuous_dividend_yield(S0,pv_div,T)
+
+
+    payoff_type = data.get("binary_payoff_structure", "cash")
+    binary_payout = data['binary_payout']
 
     is_asset_or_nothing = payoff_type == "asset"
+
     if payoff_type == "cash":
         payout_at_expiry = 1.0
     elif payoff_type == "custom":
@@ -148,10 +116,10 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     # 4) RETURN RESULTS
     # =====================================================
     return {
-        "theoretical_price": round(base_price, 6),
-        "delta": round(delta, 6),
-        "gamma": round(gamma, 6),
-        "theta": round(theta, 6),
-        "vega": round(vega, 6),
-        "rho": round(rho, 6),
+        "theoretical_price": round(base_price, 3),
+        "delta": round(delta, 3),
+        "gamma": round(gamma, 3),
+        "theta": round(theta, 3),
+        "vega": round(vega, 3),
+        "rho": round(rho, 3),
     }
