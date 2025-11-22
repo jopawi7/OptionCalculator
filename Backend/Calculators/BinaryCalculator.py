@@ -116,10 +116,10 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     # 4) RETURN RESULTS
     # =====================================================
     return {
-        "theoretical_price": round(base_price, 3),
-        "delta": round(delta, 3),
-        "gamma": round(gamma, 3),
-        "theta": round(theta, 3),
-        "vega": round(vega, 3),
-        "rho": round(rho, 3),
+        "theoretical_price": float(round(base_price, 3)),
+        "delta": float(round(delta, 3)),
+        "gamma": float(round(gamma, 3)),
+        "theta": float(round(theta, 3)),
+        "vega": float(round(vega, 3)),
+        "rho": float(round(rho, 3)),
     }
