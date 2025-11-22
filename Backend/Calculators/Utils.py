@@ -3,7 +3,7 @@ import numpy as np
 
 # ---------------------------------------------------------
 # Filename: Utils.py
-# LastUpdated: 2025-11-16
+# LastUpdated: 2025-11-22
 # Description: Utility functions for calculations
 # ---------------------------------------------------------
 
@@ -23,13 +23,17 @@ def normalize_interest_rate(x):
 
 
 def parse_time_string(time_string: str):
+    """
+       Transforms time String if provided into a datetime.time object.
+       AM is treated as 9:30, PM as 16:00.
+    """
     if not time_string:
         return time(0, 0, 0)
     tstr = str(time_string).strip().lower()
     if tstr == "am":
-        return time(9, 30, 0)   # or whatever mapping you intend
+        return time(9, 30, 0)
     if tstr == "pm":
-        return time(15, 30, 0)  # ditto
+        return time(16, 00, 0)
 
     try:
         return datetime.strptime(tstr, "%H:%M:%S").time()
