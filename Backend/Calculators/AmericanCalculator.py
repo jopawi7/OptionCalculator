@@ -266,3 +266,43 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
         "vega": float(round(vega, 3)),
         "rho": float(round(rho, 3)),
     }
+
+
+"""
+Code for AmericanCalculator with binomial Model. Unfortunately we should use the monte carlo simulation.
+
+def _american_binomial_calculation(stock_price, strike_price, risk_free_rate, dividend_yield, sigma, time_to_maturity, steps, is_call=True):
+    stock_price = max(stock_price, 1e-12)
+    if time_to_maturity <= 0:
+        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
+    dt = time_to_maturity / steps
+    if sigma <= 0 or dt <= 0:
+        # No volatility: price equals intrinsic at start (no time value)
+        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
+    u = math.exp(sigma * math.sqrt(dt))
+    d = 1.0 / u
+    if abs(u - d) < 1e-14:
+        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
+    disc = math.exp(-risk_free_rate * dt)
+    drift = math.exp((risk_free_rate - dividend_yield) * dt)
+    p = (drift - d) / (u - d)
+    # clamp to [0,1] to avoid arbitrage issues from numerics
+    p = max(0.0, min(1.0, p))
+
+    # Terminal values
+    vals = [0.0] * (steps + 1)
+    S_ud = stock_price * (d ** steps)
+    for j in range(steps + 1):
+        S_T = S_ud * (u / d) ** j
+        intrinsic = max(S_T - strike_price, 0.0) if is_call else max(strike_price - S_T, 0.0)
+        vals[j] = intrinsic
+
+    # Backward induction with early exercise
+    for i in range(steps - 1, -1, -1):
+        for j in range(i + 1):
+            cont = disc * (p * vals[j + 1] + (1 - p) * vals[j])
+            S_ij = stock_price * (u ** j) * (d ** (i - j))
+            exercise = max(S_ij - strike_price, 0.0) if is_call else max(strike_price - S_ij, 0.0)
+            vals[j] = max(cont, exercise)
+    return vals[0]
+"""

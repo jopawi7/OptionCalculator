@@ -1,5 +1,8 @@
 from datetime import datetime, time
 import numpy as np
+from typing import Dict, Any, Tuple
+from scipy.stats import norm
+
 
 # ---------------------------------------------------------
 # Filename: Utils.py
@@ -87,5 +90,24 @@ def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time)
     )
     if expire_dt <= start_dt:
         raise ValueError("Expiration datetime must be after start datetime.")
+
     return calculate_year_fraction(start_dt, expire_dt)
 
+
+def calculate_greeks_without_dividend_payments(option_type, S, strike, interest_rate, volatility, T)-> Tuple[float, float, float, float, float]:
+        d1 = (np.log(S / strike) + (interest_rate + 0.5 * volatility ** 2) * T) / (volatility * np.sqrt(T))
+        d2 = d1 - volatility * np.sqrt(T)
+
+        if option_type == "call":
+            delta = norm.cdf(d1)
+            theta = (- (S * volatility * norm.pdf(d1)) / (2 * np.sqrt(T)) - interest_rate * strike * np.exp(-interest_rate * T) * norm.cdf(d2))
+            rho = strike * T * np.exp(-interest_rate * T) * norm.cdf(d2)
+        else:
+            delta = -norm.cdf(-d1)
+            theta = (- (S * volatility * norm.pdf(d1)) / (2 * np.sqrt(T)) + interest_rate * strike * np.exp(-interest_rate * T) * norm.cdf(-d2))
+            rho = -strike * T * np.exp(-interest_rate * T) * norm.cdf(-d2)
+
+            gamma = norm.pdf(d1) / (S * volatility * np.sqrt(T))
+            vega = S * norm.pdf(d1) * np.sqrt(T)
+
+        return float(delta), float(gamma), float(theta), float(vega), float(rho)
