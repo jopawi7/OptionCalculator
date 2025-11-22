@@ -1,6 +1,6 @@
 import { Component, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
@@ -44,7 +44,7 @@ export class AppComponent {
       binary_payoff_structure: ['cash', [Validators.required]],
       binary_payout: [1, [Validators.required, Validators.min(0.01)]],
       dividends: this.fb.array([])
-    }, { validators: this.dateTimeRangeValidator });
+    });
 
     setTimeout(() => this.ready.set(true), 200);
   }
@@ -130,25 +130,4 @@ export class AppComponent {
       }
     });
   }
-
-  // Validator to ensure expiration datetime is not before start datetime
-  dateTimeRangeValidator(group: AbstractControl): ValidationErrors | null {
-    const startDate = group.get('startDate')?.value;
-    const startTime = group.get('startTime')?.value;
-    const expirationDate = group.get('expirationDate')?.value;
-    const expirationTime = group.get('expirationTime')?.value;
-
-    if (!startDate || !startTime || !expirationDate || !expirationTime) {
-      return null; // Validation only when all values are present
-    }
-
-    const startDateTime = new Date(`${startDate}T${startTime}`);
-    const expirationDateTime = new Date(`${expirationDate}T${expirationTime}`);
-
-    if (expirationDateTime < startDateTime) {
-      return { expirationBeforeStart: true };
-    }
-    return null;
-  }
-
 }
