@@ -6,7 +6,9 @@ from AmericanCalculator import calculate_option_value as calcOptionAmerican
 from AsianCalculator import calculate_option_value as calcOptionAsian
 from BinaryCalculator import calculate_option_value as calcOptionBinary
 from EuropeanCalculator import calculate_option_value as calcOptionEuropean
-from UtilsInput import *
+from Backend.Calculators.Utils import *
+from Backend.Calculators.UtilsInput import *
+
 
 # ---------------------------------------------------------
 # Filename: MainCalculator.py
@@ -86,6 +88,8 @@ def calculate_option():
             input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
         elif dividend_choice == "stream":
             input_obj['dividends'] = generate_dividend_stream(ask_until_valid_date("When should the dividend stream begin? (YYYY-MM-DD): "), input_obj['expiration_date'], ask_until_valid_number("Enter dividend amount (>= 0.01): ", minimum=0.01, exclusive_minimum=False), ask_until_valid_integer("Enter day interval of dividend streams (>= 1): ", minimum=1))
+        else:
+            input_obj['dividends'] = []
 
     else:
         # Transform all Stings to lowercase if person wrote to json.file. Otherwise this step happens directly when user inserts new value
