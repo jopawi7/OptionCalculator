@@ -119,10 +119,9 @@ def calculate_option():
             output_obj = calcOptionAsian(input_obj)
         case "binary":
             print("=== BINARY OPTION INPUTS ===")
-            if input_obj['binary_payoff_structure'] == "cash":
-                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,True, True, True)
-            elif input_obj['binary_payoff_structure'] == "asset":
-                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,True, True, True)
+           #For assets binary valuetion we do not nee to show binary_payoff
+            if input_obj['binary_payoff_structure'] == "asset":
+                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,False, True, True)
             else:
                 print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,True, True, True)
 
