@@ -66,7 +66,6 @@ def calculate_option_value(data):
     else:
         price = strike * np.exp(-interest_rate * T) * norm.cdf(-d2) - stock_present_value * norm.cdf(-d1)
 
-
     delta, gamma, theta, vega, rho = calculate_greeks_without_dividend_payments(option_type, S,strike, interest_rate, volatility, T)
 
     # =====================================================

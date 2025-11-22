@@ -225,34 +225,8 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     # --- Base price ---
     base_price = _price_given(S0, sigma, r, T)
 
-    # --- Greeks via bump-and-reprice ---
-    h_S = max(0.01 * S0, 1e-4)
-    h_sigma = max(0.01 * sigma, 1e-4)
-    h_r = 1e-4
-    h_T = 1.0 / 365.0  # one day in years
+    delta, gamma, theta, vega, rho = calculate_greeks_without_dividend_payments(option_type, S0,K, r, sigma, T)
 
-    # Delta & Gamma
-    price_up_S = _price_given(S0 + h_S, sigma, r, T)
-    price_dn_S = _price_given(max(S0 - h_S, 1e-8), sigma, r, T)
-    delta = (price_up_S - price_dn_S) / (2.0 * h_S)
-    gamma = (price_up_S - 2.0 * base_price + price_dn_S) / (h_S * h_S)
-
-    # Vega
-    price_up_sigma = _price_given(S0, sigma + h_sigma, r, T)
-    price_dn_sigma = _price_given(S0, max(sigma - h_sigma, 1e-8), r, T)
-    vega = (price_up_sigma - price_dn_sigma) / (2.0 * h_sigma)
-
-    # Rho
-    price_up_r = _price_given(S0, sigma, r + h_r, T)
-    price_dn_r = _price_given(S0, sigma, r - h_r, T)
-    rho = (price_up_r - price_dn_r) / (2.0 * h_r)
-
-    # Theta (bump maturity)
-    T_short = max(T - h_T, 1e-8)
-    T_long = T + h_T
-    price_short_T = _price_given(S0, sigma, r, T_short)
-    price_long_T = _price_given(S0, sigma, r, T_long)
-    theta = (price_short_T - price_long_T) / (2.0 * h_T)
 
     # =====================================================
     # 3) RETURN RESULTS (MainCalculator.py prints them)
