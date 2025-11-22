@@ -12,8 +12,6 @@ from Utils import *
 # Possibility to inclued Prepaid-Forward
 
 
-
-
 def calculate_option_value(data):
     """
     Calculate the price and Greeks of a European option (call or put)
@@ -47,9 +45,7 @@ def calculate_option_value(data):
     interest_rate = normalize_interest_rate_or_volatility(data['interest_rate'])
     dividends_list = data.get("dividends", [])
 
-
     T = calculate_time_to_maturity(start_date, start_time, expiration_date, expiration_time)
-
 
     #The online calculator does only consider dividends if there are five or more dividends scheduled. Don´t ask my why
     #Also why the greeks are not adapted to interest rates
@@ -57,8 +53,6 @@ def calculate_option_value(data):
         stock_present_value = S
     else:
         stock_present_value = S - calculate_present_value_dividends(data["dividends"], start_date, expiration_date,interest_rate)
-
-
 
     # =====================================================
     # 2) BLACK-SCHOLES CORE COMPUTATION
