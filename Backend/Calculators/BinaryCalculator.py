@@ -103,6 +103,7 @@ def calculate_option_value(data):
                 (log(S / K) + (r - q + 0.5 * sigma ** 2) * T)
         )
 
+
     return {
         "theoretical_price": round(price, 3),
         "delta": round(delta, 3),
