@@ -1,165 +1,161 @@
+from __future__ import annotations
+
 import json
-from random import choice
-
-import jsonschema
 import os
-from AmericanCalculator import calculate_option_value as calcOptionAmerican
-from AsianCalculator import calculate_option_value as calcOptionAsian
-from BinaryCalculator import calculate_option_value as calcOptionBinary
-from EuropeanCalculator import calculate_option_value as calcOptionEuropean
-from ValidateInput import *
+from typing import Any
 
-# ---------------------------------------------------------
-# Filename: MainCalculator.py
-# Created: 2025-11-17
-# Description: Reads input.json, Calculates the Corresponding results, Writes it into output.json
-# ---------------------------------------------------------
+from AmericanCalculator import calculate_option_value as calc_american
+from AsianCalculator import calculate_option_value as calc_asian
+from BinaryCalculator import calculate_option_value as calc_binary
+from EuropeanCalculator import calculate_option_value as calc_european
+
+from input_utils import (
+    ask_yes_no,
+    build_input_interactively,
+    validate_input_data,
+    generate_dividends_from_stream,
+)
+
+
+def _default_paths() -> tuple[str, str, str]:
+    """
+    Returns default paths for input.json, input_schema.json, and output.json,
+    relative to this file.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    input_path = os.path.join(base_dir, "..", "Input", "input.json")
+    schema_path = os.path.join(base_dir, "..", "Input", "input_schema.json")
+    output_path = os.path.join(base_dir, "..", "Output", "output.json")
+    return input_path, schema_path, output_path
+
+
+def _load_json(path: str) -> Any:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _select_calculator(exercise_style: str):
+    style = exercise_style.lower()
+    mapping = {
+        "european": calc_european,
+        "american": calc_american,
+        "asian": calc_asian,
+        "binary": calc_binary,
+    }
+    if style not in mapping:
+        valid = ", ".join(sorted(mapping))
+        raise ValueError(
+            f"Unknown exercise_style={exercise_style!r}. "
+            f"Valid values are: {valid}."
+        )
+    return mapping[style]
 
 
 def calculate_option():
-    print("Hi, welcome to our Option Calculator!\n")
+    """
+    Main process:
+      1) Ask whether to read parameters from input.json or enter them manually.
+      2) Validate the inputs (schema + custom validation).
+      3) Generate dividends from the stream and combine them with discrete ones.
+      4) Call the corresponding calculator.
+      5) Print results and save them to output.json.
+    """
+    input_path, schema_path, output_path = _default_paths()
 
-    #Create paths to input and output file
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    input_path = os.path.join(dir_path, '..', 'Input', 'input.json')
-    input_schema = os.path.join(dir_path, '..', 'Input', 'input_schema.json')
-    output_path = os.path.join(dir_path, '..', 'Output', 'output.json')
-    output_schema = os.path.join(dir_path, '..', 'Output', 'output_schema.json')
+    print(">>> Option Calculator")
+    use_file = ask_yes_no("Do you want to read the parameters from input.json? (y/n): ")
 
-    # Path to Input in input.json... :)
-    with open(input_path, 'r') as f:
-        input_obj = json.load(f)
-    with open(input_schema, 'r') as f:
-        input_schema = json.load(f)
-
-
-    #TODO – Code input dialog and write Json Schema
-    print(
-        "Do you want to enter new data ('new') or use the existing data in input.json ('json')?\n"
-        "If you put data directly into the JSON file, please adhere strictly to the input_schema; otherwise, the calculation will not run.\n")
-
-    #If new input dialog make dialog... else skip:
-    if ask_until_valid_string("Your choice (new/json): ", {"new", "json"}) == "new":
-        input_obj['type'] = ask_until_valid_string("Which option type do you want to calculate? (call|put): ", {"call", "put"})
-        input_obj['exercise_style'] = ask_until_valid_string("Which exercise style do you want (american|european|asian|binary): ", {"american", "european", "asian", "binary"} )
-
-
-        while True:
-            input_obj['start_date'] = ask_until_valid_date("When does the option start? (YYYY-MM-DD): ")
-            input_obj['start_time'] = ask_until_valid_time("At what time does the option start? (HH:MM:SS or AM/PM): ")
-            input_obj['expiration_date'] = ask_until_valid_date("When does the option expire? (YYYY-MM-DD): ")
-            input_obj['expiration_time'] = ask_until_valid_time("At what time does the option expire? (HH:MM:SS or AM/PM): ")
-            if validate_start_expiration(input_obj['start_date'], input_obj['start_time'], input_obj['expiration_date'], input_obj['expiration_time']):
-                break
-            print("The start date must be before the expiration date.")
-
-        input_obj['stock_price'] = ask_until_valid_number("Enter stock price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
-        input_obj['strike'] = ask_until_valid_number("Enter strike price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
-
-
-        input_obj['volatility'] = prompt_and_validate("Enter volatility (> 0), e.g. 0.20 for 20%: ", validate_volatility)
-        input_obj['interest_rate'] = prompt_and_validate("Enter interest rate (percent), e.g. 1.5 for 1.5%: ", validate_interest_rate)
-
-
-        #Special cases binary
-        if input_obj['exercise_style'] == 'binary':
-            input_obj['binary_payoff_structure'] = ask_until_valid_string("Binary option type (cash | asset | custom): ", {"cash", "asset", "custom"})
-            if input_obj['binary_payoff_structure'] == "custom":
-                input_obj['binary_payout'] = ask_until_valid_number("Enter binary payout (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
-            if input_obj['binary_payoff_structure'] == "cash":
-                input_obj['binary_payout'] = 1.0
-
-        #Special cases asian
-        if input_obj['exercise_style'] == 'asian':
-            input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})
-
-        #Special cases asian and american
-        if input_obj['exercise_style'] == 'asian' or input_obj['exercise_style'] == 'american':
-            input_obj['number_of_steps'] = ask_until_valid_integer("Enter number of steps (>= 1) for MC-Simulation: ", minimum=1,
-                                                                   maximum=1000)
-            input_obj['number_of_simulations'] = ask_until_valid_integer("Enter number of simulations (>= 1): ",
-                                                                         minimum=1, maximum=100000)
-
-
-        input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
-
-
+    # 1) Get input_obj (from file or interactively)
+    if use_file:
+        try:
+            input_obj = _load_json(input_path)
+        except FileNotFoundError:
+            print(f"Input file not found at {input_path}.")
+            if ask_yes_no("Do you want to enter the data manually instead? (y/n): "):
+                input_obj = build_input_interactively()
+            else:
+                print("Aborting: no input data provided.")
+                return
     else:
-        # Transform all Stings to lowercase if person wrote to json.file. Otherwise this step happens directly when user inserts new value
-        input_obj['type'] = input_obj['type'].lower()
-        input_obj['exercise_style'] = input_obj['exercise_style'].lower()
-        input_obj['start_time'] = input_obj['start_time'].lower()
-        input_obj['expiration_time'] = input_obj['expiration_time'].lower()
-        input_obj['average_type'] = input_obj['average_type'].lower()
-        input_obj['binary_payoff_structure'] = input_obj['binary_payoff_structure'].lower()
+        input_obj = build_input_interactively()
+        if ask_yes_no("Do you want to save this input to input.json for future runs? (y/n): "):
+            os.makedirs(os.path.dirname(input_path), exist_ok=True)
+            with open(input_path, "w", encoding="utf-8") as f:
+                json.dump(input_obj, f, indent=2)
+            print(f"Input saved to {input_path}")
 
-
-    #Validate that Object fits to our input_schema.json, safe the updated object
+    # 2) Load schema (if exists) and validate
     try:
-        with open(input_path, 'w', encoding='utf-8') as f:
-            json.dump(input_obj, f, ensure_ascii=False, indent=4)
-        jsonschema.validate(instance=input_obj, schema=input_schema)
-        print("The input is valid! You are only seconds away from the option price.")
-    except jsonschema.ValidationError as e:
-        raise
+        schema_obj = _load_json(schema_path)
+    except FileNotFoundError:
+        schema_obj = None
+        print("Warning: input_schema.json not found. Only custom validation will be applied.")
 
-
-    #Print which data is used to calculate the option price
-
-
-
-
-
-
-
-
-
-
-
-    # Select the corresponding calculator and calculate results
-    output_obj = None
-    match input_obj['exercise_style']:
-        case "american":
-            output_obj = calcOptionAmerican(input_obj)
-        case "asian":
-            output_obj = calcOptionAsian(input_obj)
-        case "binary":
-            output_obj = calcOptionBinary(input_obj)
-        case "european":
-            output_obj = calcOptionEuropean(input_obj)
-        case _:
-            raise ValueError("Invalid exercise style")
-
-    #Validate that output_obj fits to our defined output_schema.json
-    with open(output_schema, 'r') as f:
-        output_schema = json.load(f)
-
-    #Usually this should not be possible but is an additional robustness proof
-    #that only allows mathematical valid values.
     try:
-        jsonschema.validate(instance=output_obj, schema=output_schema)
-    except jsonschema.ValidationError as e:
-        raise
+        validate_input_data(input_obj, schema_obj)
+        print("✔ Input validated successfully.")
+    except ValueError as exc:
+        print(f"Input validation error: {exc}")
+        return
 
-    print("")
-    print("----- Result Summary -----")
-    print(f"Theoretical Price: {output_obj.get('theoretical_price', 'N/A')}")
-    print(f"Delta: {output_obj.get('delta', 'N/A')}")
-    print(f"Gamma: {output_obj.get('gamma', 'N/A')}")
-    print(f"Rho: {output_obj.get('rho', 'N/A')}")
-    print(f"Theta: {output_obj.get('theta', 'N/A')}")
-    print(f"Vega: {output_obj.get('vega', 'N/A')}")
+    # 3) Generate additional dividends from stream (if configured)
+    stream_cfg = input_obj.get("dividend_stream")
+    dividends_final = list(input_obj.get("dividends", []))
 
-    # Safe the output
+    if stream_cfg:
+        generated = generate_dividends_from_stream(
+            stream_cfg,
+            input_obj["start_date"],
+            input_obj["expiration_date"],
+        )
+        dividends_final.extend(generated)
+
+        # Sort dividends by date for clarity
+        try:
+            dividends_final.sort(key=lambda d: d["date"])
+        except KeyError:
+            pass
+
+        input_obj["dividends"] = dividends_final
+        # Optional: remove stream config to avoid clutter in calculators
+        input_obj.pop("dividend_stream", None)
+
+    # 4) Select calculator
     try:
-        with open(output_path, "w") as f:
+        calculator = _select_calculator(input_obj["exercise_style"])
+    except KeyError:
+        print("Input JSON must contain 'exercise_style'.")
+        return
+    except ValueError as exc:
+        print(exc)
+        return
+
+    # 5) Calculate
+    try:
+        output_obj = calculator(input_obj)
+    except Exception as exc:
+        print(f"An error occurred while calculating the option value: {exc}")
+        return
+
+    # 6) Display results
+    print("\n=== RESULTS ===")
+    if isinstance(output_obj, dict):
+        for key, value in output_obj.items():
+            print(f"{key:20s}: {value}")
+    else:
+        print(output_obj)
+
+    # 7) Save results
+    try:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(output_obj, f, indent=2)
-        print(f"Results successfully written to: output.json")
-    except Exception as e:
-        print(f"An error occurred while saving the output: {e}")
+        print(f"\n✔ Results successfully written to: {output_path}")
+    except Exception as exc:
+        print(f"An error occurred while saving the output: {exc}")
+
     return output_obj
 
 
-
-if __name__ == '__main__':
-   calculate_option()
+if __name__ == "__main__":
+    calculate_option()
