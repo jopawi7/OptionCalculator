@@ -59,6 +59,8 @@ class OptionInput(BaseModel):
     average_type: str
     number_of_steps: int
     number_of_simulations: int
+    binary_payout: float
+    binary_payoff_structure: str
     dividends: List[Dividend] = []
 
 
