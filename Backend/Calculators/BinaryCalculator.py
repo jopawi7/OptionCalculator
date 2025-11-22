@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 from typing import Any, Dict
 import numpy as np
 from scipy.stats import norm
-from Backend.Calculators.Utils import *
+from .Utils import *
 
 
 # ---------------------------------------------------------
@@ -35,7 +33,7 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     r = normalize_interest_rate_or_volatility(data["interest_rate"])
     dividends_list = data.get("dividends", [])
 
-    T = calculate_time_to_maturity(data["start_date"],data["start_time"],data["expiration_date"], data["expiration_time"], )
+    T = calculate_time_to_maturity(data["start_date"],data["start_time"],data["expiration_date"], data["expiration_time"] )
 
     pv_div = calculate_present_value_dividends(
         dividends_list,data["start_date"],data["expiration_date"],r)
@@ -47,7 +45,6 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     binary_payout = data['binary_payout']
 
     is_asset_or_nothing = payoff_type == "asset"
-
     if payoff_type == "cash":
         payout_at_expiry = 1.0
     elif payoff_type == "custom":
