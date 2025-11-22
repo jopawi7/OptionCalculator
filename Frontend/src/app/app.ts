@@ -39,7 +39,7 @@ export class AppComponent {
       volatility: [20, [Validators.required, Validators.min(0.0000001)]],
       interestRate: [5, [Validators.required]],
       number_of_steps: [500, [Validators.required, Validators.min(1), Validators.max(1000)]],
-      number_of_simulations: [10000, [Validators.required, Validators.min(1), Validators.max(100000)]],
+      number_of_simulations: [10000, [Validators.required, Validators.min(1), Validators.max(10000)]],
       average_type: ['arithmetic', [Validators.required, Validators.pattern(/^(arithmetic|geometric)$/i)]],
       binary_payoff_structure: ['cash', [Validators.required]],
       binary_payout: [1, [Validators.required, Validators.min(0.01)]],
