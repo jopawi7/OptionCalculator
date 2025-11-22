@@ -1,62 +1,81 @@
-from math import log, sqrt, exp
-from scipy.stats import norm
-from Utils import *
+from __future__ import annotations
+
 from typing import Any, Dict
+import numpy as np
+from scipy.stats import norm
+
+from Utils import (
+    calculate_time_to_maturity,
+    normalize_interest_rate_or_volatility,
+    calculate_present_value_dividends,
+    calc_continuous_dividend_yield,
+)
+
 
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
-
     """
-    Compute price and Greeks for a binary (cash-or-nothing/asset-or-nothing) options
-    using Black-Scholes model.
+    Calculate the price and Greeks of a European binary option (call or put)
+    under the Black–Scholes model with continuous dividend yield.
 
-      Required keys in `data`:
-      - type: "call" or "put"
-      - exercise_style: should be "binary"
-      - start_date: "YYYY-MM-DD"
-      - start_time: "HH:MM:SS" or "am"/"pm"
-      - expiration_date: "YYYY-MM-DD"
-      - expiration_time: "HH:MM:SS" or "am"/"pm"
-      - strike: float
-      - stock_price: float
-      - volatility: float
-      - interest_rate: float
-      - binary_payout: float
-      - dividends: list of {"date": "YYYY-MM-DD", "amount": float}
-
-
-         Payoff structures supported:
+    Payoff structures supported:
       - cash:   pays 1 at expiry if in the money
       - custom: pays binary_payout at expiry if in the money
       - asset:  pays S_T at expiry if in the money
     """
 
     # =====================================================
-    # 1) EXTRACT AND CALCULATE PARAMETERS
+    # 1) DISPLAY INPUTS
     # =====================================================
-    option_type = data["type"]
-    stock_price = data["stock_price"]
-    strike_price = data["strike"]
-    sigma = normalize_interest_rate_or_volatility(data['volatility'])
-    risk_free_rate = normalize_interest_rate_or_volatility(data['interest_rate'])
-    time_to_maturity = calculate_time_to_maturity(data["start_date"], data["start_time"], data["expiration_date"], data["expiration_time"])
-    payout_at_expiry = data.get("binary_payout", 1.0)
+    print("\n=== BINARY OPTION INPUTS ===")
+    input_fields = {
+        "Option type": data["type"],
+        "Exercise style": data["exercise_style"],
+        "Start date": data["start_date"],
+        "Start time": data["start_time"],
+        "Expiration date": data["expiration_date"],
+        "Expiration time": data["expiration_time"],
+        "Stock price (S0)": data["stock_price"],
+        "Strike price (K)": data["strike"],
+        "Volatility (raw)": data["volatility"],
+        "Interest rate (raw)": data["interest_rate"],
+        "Dividends": data.get("dividends", []),
+        "Binary payoff type": data.get("binary_payoff_type", "cash"),
+        "Binary payout": data.get("binary_payout", 1.0),
+    }
+    for key, value in input_fields.items():
+        print(f"{key:25s}: {value}")
 
-    # Normalize dividends
-    pv_dividends = calculate_present_value_dividends(
-        data.get("dividends", []),
+    # =====================================================
+    # 2) EXTRACT AND CALCULATE PARAMETERS
+    # =====================================================
+    option_type = data["type"].lower()
+    S0 = float(data["stock_price"])
+    K = float(data["strike"])
+    sigma = normalize_interest_rate_or_volatility(float(data["volatility"]))
+    r = normalize_interest_rate_or_volatility(float(data["interest_rate"]))
+    dividends_list = data.get("dividends", [])
+
+    T = calculate_time_to_maturity(
+        data["start_date"],
+        data["start_time"],
+        data["expiration_date"],
+        data["expiration_time"],
+    )
+
+    pv_div = calculate_present_value_dividends(
+        dividends_list,
         data["start_date"],
         data["expiration_date"],
-        risk_free_rate,
+        r,
+    )
+    q = calc_continuous_dividend_yield(
+        stock_price=S0,
+        pv_dividends=pv_div,
+        time_to_maturity=T,
     )
 
-    continuous_dividend_yield = calc_continuous_dividend_yield(
-        stock_price,
-        pv_dividends,
-        time_to_maturity,
-    )
-
-    payoff_type = data.get("binary_payoff_structure", "cash")
-    binary_payout = data.get("binary_payout", 1.0)
+    payoff_type = str(data.get("binary_payoff_type", "cash")).lower()
+    binary_payout = float(data.get("binary_payout", 1.0))
 
     is_asset_or_nothing = payoff_type == "asset"
     if payoff_type == "cash":
@@ -64,40 +83,39 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     elif payoff_type == "custom":
         payout_at_expiry = binary_payout
     else:
-        payout_at_expiry = None # not used for asset-or-nothing
+        payout_at_expiry = None  # not used for asset-or-nothing
 
     # =====================================================
-    # 2) BLACK–SCHOLES CORE + GREEKS
+    # 3) BLACK–SCHOLES CORE + GREEKS
     # =====================================================
-    sqrt_T = np.sqrt(time_to_maturity)
-    d1 = (np.log(stock_price / strike_price) + (risk_free_rate - continuous_dividend_yield + 0.5 * sigma * sigma) * time_to_maturity) / (sigma * sqrt_T)
+    sqrt_T = np.sqrt(T)
+    d1 = (np.log(S0 / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * sqrt_T)
     d2 = d1 - sigma * sqrt_T
 
     if is_asset_or_nothing:
         if option_type == "call":
-            base_price = stock_price * np.exp(-continuous_dividend_yield * time_to_maturity) * norm.cdf(d1)
+            base_price = S0 * np.exp(-q * T) * norm.cdf(d1)
         else:
-            base_price = stock_price * np.exp(-continuous_dividend_yield * time_to_maturity) * norm.cdf(-d1)
+            base_price = S0 * np.exp(-q * T) * norm.cdf(-d1)
     else:
         if option_type == "call":
-            base_price = payout_at_expiry * np.exp(-risk_free_rate * time_to_maturity) * norm.cdf(d2)
+            base_price = payout_at_expiry * np.exp(-r * T) * norm.cdf(d2)
         else:
-            base_price = payout_at_expiry * np.exp(-risk_free_rate * time_to_maturity) * norm.cdf(-d2)
+            base_price = payout_at_expiry * np.exp(-r * T) * norm.cdf(-d2)
 
     # Greeks via finite differences
-    def price_shift(s_shift, r_shift, sigma_shift, t_shift):
-        sqrt_Ts = np.sqrt(t_shift)
-        d1s = (np.log(s_shift / strike_price) + (r_shift - continuous_dividend_yield + 0.5 * sigma_shift * sigma_shift) * t_shift) / (
-                    sigma_shift * sqrt_Ts)
+    def price_shift(S_shift, r_shift, sigma_shift, T_shift):
+        sqrt_Ts = np.sqrt(T_shift)
+        d1s = (np.log(S_shift / K) + (r_shift - q + 0.5 * sigma_shift * sigma_shift) * T_shift) / (sigma_shift * sqrt_Ts)
         d2s = d1s - sigma_shift * sqrt_Ts
         if is_asset_or_nothing:
             return (
-                s_shift * np.exp(-continuous_dividend_yield * t_shift) * norm.cdf(d1s)
+                S_shift * np.exp(-q * T_shift) * norm.cdf(d1s)
                 if option_type == "call"
-                else s_shift * np.exp(-continuous_dividend_yield * t_shift) * norm.cdf(-d1s)
+                else S_shift * np.exp(-q * T_shift) * norm.cdf(-d1s)
             )
         else:
-            disc = np.exp(-r_shift * t_shift)
+            disc = np.exp(-r_shift * T_shift)
             coeff = payout_at_expiry
             return (
                 coeff * disc * norm.cdf(d2s)
@@ -105,35 +123,35 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
                 else coeff * disc * norm.cdf(-d2s)
             )
 
-    dS = max(1e-4 * stock_price, 1e-4)
-    price_up_S = price_shift(stock_price + dS, risk_free_rate, sigma, time_to_maturity)
-    price_down_S = price_shift(stock_price - dS, risk_free_rate, sigma, time_to_maturity)
+    dS = max(1e-4 * S0, 1e-4)
+    price_up_S = price_shift(S0 + dS, r, sigma, T)
+    price_down_S = price_shift(S0 - dS, r, sigma, T)
     delta = (price_up_S - price_down_S) / (2 * dS)
     gamma = (price_up_S - 2 * base_price + price_down_S) / (dS ** 2)
 
     dsigma = max(1e-4 * sigma, 1e-4)
-    price_up_sigma = price_shift(stock_price, risk_free_rate, sigma + dsigma, time_to_maturity)
-    price_down_sigma = price_shift(stock_price, risk_free_rate, sigma - dsigma, time_to_maturity)
+    price_up_sigma = price_shift(S0, r, sigma + dsigma, T)
+    price_down_sigma = price_shift(S0, r, sigma - dsigma, T)
     vega = (price_up_sigma - price_down_sigma) / (2 * dsigma)
 
-    dr = max(1e-4 * max(abs(risk_free_rate), 1.0), 1e-4)
-    price_up_r = price_shift(stock_price, risk_free_rate + dr, sigma, time_to_maturity)
-    price_down_r = price_shift(stock_price, risk_free_rate - dr, sigma, time_to_maturity)
+    dr = max(1e-4 * max(abs(r), 1.0), 1e-4)
+    price_up_r = price_shift(S0, r + dr, sigma, T)
+    price_down_r = price_shift(S0, r - dr, sigma, T)
     rho = (price_up_r - price_down_r) / (2 * dr)
 
-    dT = min(0.01, 0.25 * time_to_maturity) if time_to_maturity > 0.01 else time_to_maturity * 0.5
-    price_up_T = price_shift(stock_price, risk_free_rate, sigma, time_to_maturity + dT)
-    price_down_T = price_shift(stock_price, risk_free_rate, sigma, time_to_maturity - dT)
+    dT = min(0.01, 0.25 * T) if T > 0.01 else T * 0.5
+    price_up_T = price_shift(S0, r, sigma, T + dT)
+    price_down_T = price_shift(S0, r, sigma, T - dT)
     theta = -((price_up_T - price_down_T) / (2 * dT))
 
     # =====================================================
-    # 3) RETURN RESULTS
+    # 4) RETURN RESULTS
     # =====================================================
     return {
-        "theoretical_price": round(base_price, 3),
-        "delta": round(delta, 3),
-        "gamma": round(gamma, 3),
-        "rho": round(rho, 3),
-        "theta": round(theta, 3),
-        "vega": round(vega, 3),
+        "option_price": round(base_price, 6),
+        "delta": round(delta, 6),
+        "gamma": round(gamma, 6),
+        "theta": round(theta, 6),
+        "vega": round(vega, 6),
+        "rho": round(rho, 6),
     }
