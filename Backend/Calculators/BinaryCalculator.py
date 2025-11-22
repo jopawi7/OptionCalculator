@@ -4,12 +4,7 @@ from typing import Any, Dict
 import numpy as np
 from scipy.stats import norm
 
-from Utils import (
-    calculate_time_to_maturity,
-    normalize_interest_rate_or_volatility,
-    calculate_present_value_dividends,
-    calc_continuous_dividend_yield,
-)
+from Utils import *
 
 
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
