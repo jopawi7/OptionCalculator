@@ -1,23 +1,18 @@
 {
     "type": "call",
-    "exercise_style": "binary",
-    "start_date": "2025-11-18",
-    "start_time": "16:51:14",
-    "expiration_date": "2026-12-31",
-    "expiration_time": "am",
-    "strike": 110.0,
+    "exercise_style": "european",
+    "start_date": "2025-11-22",
+    "start_time": "12:28:02",
+    "expiration_date": "2026-03-31",
+    "expiration_time": "pm",
+    "strike": 100.0,
     "stock_price": 120.0,
-    "volatility": 0.25,
-    "interest_rate": 3,
+    "volatility": 20.0,
+    "interest_rate": 1.5,
     "average_type": "arithmetic",
     "number_of_steps": 100,
     "number_of_simulations": 1000,
     "binary_payout": 120.0,
     "binary_payoff_structure": "cash",
-    "dividends": [
-        {
-            "date": "2025-11-28",
-            "amount": 1.3
-        }
-    ]
+    "dividends": []
 }

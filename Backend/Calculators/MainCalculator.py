@@ -1,5 +1,4 @@
 import json
-from random import choice
 
 import jsonschema
 import os
@@ -99,7 +98,7 @@ def calculate_option():
         with open(input_path, 'w', encoding='utf-8') as f:
             json.dump(input_obj, f, ensure_ascii=False, indent=4)
         jsonschema.validate(instance=input_obj, schema=input_schema)
-        print("The input is valid! You are only seconds away from the option price.")
+        print("\nThe input is valid! You are only seconds away from the option price.\n")
     except jsonschema.ValidationError as e:
         raise
 
