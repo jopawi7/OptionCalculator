@@ -35,14 +35,17 @@ export class AppComponent {
       expirationDate: ['', [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
       expirationTime: ['', [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/)]],
       strike: [100.0, [Validators.required, Validators.min(0.01)]],
-      stockPrice: [300, [Validators.required, Validators.min(0.01)]],
+      stockPrice: [120, [Validators.required, Validators.min(0.01)]],
       volatility: [20, [Validators.required, Validators.min(0.0000001)]],
       interestRate: [1.5, [Validators.required]],
       number_of_steps: [100, [Validators.required, Validators.min(1), Validators.max(1000)]],
-      number_of_simulations: [10000, [Validators.required, Validators.min(1), Validators.max(1000000)]],
+      number_of_simulations: [10000, [Validators.required, Validators.min(1), Validators.max(100000)]],
       average_type: ['arithmetic', [Validators.required, Validators.pattern(/^(arithmetic|geometric)$/i)]],
+      binary_payoff_structure: ['cash', [Validators.required]],
+      binary_payout: [1, [Validators.required, Validators.min(0.01)]],
       dividends: this.fb.array([])
     });
+
     setTimeout(() => this.ready.set(true), 200);
   }
 
@@ -69,6 +72,16 @@ export class AppComponent {
     this.calculatorForm.get(controlName)?.setValue(value);
   }
 
+  onBinaryPayoffStructureChange(value: string): void {
+    if (value === 'cash') {
+      this.setFormValue('binary_payout', 1);
+    } else if (value === 'asset') {
+      // Keine Änderung an binary_payout
+    }
+    // Bei 'custom' bleibt der Wert editierbar
+    this.cdr.detectChanges();
+  }
+
   onSubmit(): void {
     if (this.calculatorForm.invalid) {
       this.calculatorForm.markAllAsTouched();
@@ -93,6 +106,8 @@ export class AppComponent {
       average_type: v.average_type.toLowerCase(),
       number_of_steps: v.number_of_steps,
       number_of_simulations: v.number_of_simulations,
+      binary_payoff_structure: v.binary_payoff_structure.toLowerCase(),
+      binary_payout: Number(v.binary_payout),
       dividends: (v.dividends ?? []).map((d: any) => ({ date: d.date, amount: Number(d.amount) }))
     };
 
@@ -104,6 +119,7 @@ export class AppComponent {
         this.rho = res.rho;
         this.theta = res.theta;
         this.vega = res.vega;
+
         this.isLoading = false;
         this.cdr.detectChanges();
       },

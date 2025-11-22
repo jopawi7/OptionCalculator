@@ -106,8 +106,38 @@
           </small>
         </div>
 
-        <!-- Conditional fields for American & Asian Style -->
-        <ng-container *ngIf="formValue('style') === 'AMERICAN' || formValue('style') === 'ASIAN'">
+        <!-- Binary Payoff Structure Container -->
+        <div class="form-group" *ngIf="formValue('style') === 'BINARY'">
+          <label for="binary_payoff_structure">Binary Payoff Structure</label>
+          <select id="binary_payoff_structure" formControlName="binary_payoff_structure"
+                  (change)="onBinaryPayoffStructureChange(formValue('binary_payoff_structure'))">
+            <option value="cash">Cash</option>
+            <option value="asset">Asset</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <!-- Binary Payout Input (only shown when custom selected) -->
+        <div class="form-group" *ngIf="formValue('style') === 'BINARY' && formValue('binary_payoff_structure') === 'custom'">
+          <label for="binary_payout">Binary Payout</label>
+          <input id="binary_payout" type="number" formControlName="binary_payout" min="0.01" step="0.01" inputmode="decimal">
+        </div>
+
+        <!-- Asian Average Type Container -->
+        <div class="form-group" *ngIf="formValue('style') === 'ASIAN'">
+          <label for="average_type">Average Type*</label>
+          <select id="average_type" formControlName="average_type">
+            <option value="">Please select</option>
+            <option value="arithmetic">Arithmetic</option>
+            <option value="geometric">Geometric</option>
+          </select>
+          <small class="error" *ngIf="calculatorForm.get('average_type')?.touched && calculatorForm.get('average_type')?.invalid">
+            Average type is required.
+          </small>
+        </div>
+
+        <!-- Conditional fields for American Style or Asian Style with arithmetic avg type -->
+        <ng-container *ngIf="formValue('style') === 'AMERICAN' || (formValue('style') === 'ASIAN' && formValue('average_type') === 'arithmetic')">
           <div class="form-group">
             <label for="number_of_steps">Number of Steps*</label>
             <input id="number_of_steps" type="number" formControlName="number_of_steps" min="1" step="1" inputmode="numeric">
@@ -124,19 +154,6 @@
             </small>
           </div>
         </ng-container>
-      </div>
-
-      <!-- Average Type only for Asian Style -->
-      <div *ngIf="formValue('style') === 'ASIAN'" class="form-group average-type-container">
-        <label for="average_type">Average Type*</label>
-        <select id="average_type" formControlName="average_type">
-          <option value="">Please select</option>
-          <option value="arithmetic">Arithmetic</option>
-          <option value="geometric">Geometric</option>
-        </select>
-        <small class="error" *ngIf="calculatorForm.get('average_type')?.touched && calculatorForm.get('average_type')?.invalid">
-          Average type is required.
-        </small>
       </div>
 
       <!-- Dividends -->
