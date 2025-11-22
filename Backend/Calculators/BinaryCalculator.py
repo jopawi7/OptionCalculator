@@ -31,7 +31,9 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
       - asset:  pays S_T at expiry if in the money
     """
 
-    # 1) Extract and calculate parameters
+    # =====================================================
+    # 1) EXTRACT AND CALCULATE PARAMETERS
+    # =====================================================
     option_type = data["type"]
     stock_price = data["stock_price"]
     strike_price = data["strike"]
@@ -65,8 +67,9 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     else:
         payout_at_expiry = None # not used for asset-or-nothing
 
-
-    #2) Black–Scholes core and greeks
+    # =====================================================
+    # 2) BLACK–SCHOLES CORE + GREEKS
+    # =====================================================
     sqrt_T = np.sqrt(time_to_maturity)
     d1 = (np.log(stock_price / strike_price) + (risk_free_rate - continuous_dividend_yield + 0.5 * sigma * sigma) * time_to_maturity) / (sigma * sqrt_T)
     d2 = d1 - sigma * sqrt_T
@@ -124,6 +127,9 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     price_down_T = price_shift(stock_price, risk_free_rate, sigma, time_to_maturity - dT)
     theta = -((price_up_T - price_down_T) / (2 * dT))
 
+    # =====================================================
+    # 3) RETURN RESULTS
+    # =====================================================
     return {
         "theoretical_price": round(base_price, 3),
         "delta": round(delta, 3),

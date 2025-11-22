@@ -84,6 +84,9 @@ def calculate_option():
             input_obj['binary_payoff_structure'] = ask_until_valid_string("Binary option type (cash | asset | custom): ", {"cash", "asset", "custom"})
             if input_obj['binary_payoff_structure'] == "custom":
                 input_obj['binary_payout'] = ask_until_valid_number("Enter binary payout (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
+            if input_obj['binary_payoff_structure'] == "cash":
+                input_obj['binary_payout'] = 1.0
+
 
         if input_obj['exercise_style'] == 'asian':
             input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})

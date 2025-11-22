@@ -90,7 +90,7 @@ def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time)
         parse_time_string(expire_time)
     )
     if expire_dt <= start_dt:
-        raise ValueError("Expiration datetime must be after start datetime.")
+        raise ValueError("Expiration  must be after start.")
     return calculate_year_fraction(start_dt, expire_dt)
 
 
