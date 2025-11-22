@@ -3,7 +3,7 @@ import numpy as np
 
 # ---------------------------------------------------------
 # Filename: Utils.py
-# LastUpdated: 2025-11-22
+# LastUpdated: 2025-11-16
 # Description: Utility functions for calculations
 # ---------------------------------------------------------
 
@@ -23,17 +23,13 @@ def normalize_interest_rate_or_volatility(x):
 
 
 def parse_time_string(time_string: str):
-    """
-       Transforms time String if provided into a datetime.time object.
-       AM is treated as 9:30, PM as 16:00.
-    """
     if not time_string:
         return time(0, 0, 0)
     tstr = str(time_string).strip().lower()
     if tstr == "am":
-        return time(9, 30, 0)
+        return time(9, 30, 0)   # or whatever mapping you intend
     if tstr == "pm":
-        return time(16, 00, 0)
+        return time(15, 30, 0)  # ditto
 
     try:
         return datetime.strptime(tstr, "%H:%M:%S").time()
@@ -66,7 +62,7 @@ def calculate_present_value_dividends(dividend_list, start_date, expiry_date, ri
     return present_value
 
 def calc_continuous_dividend_yield(stock_price, pv_dividends, time_to_maturity):
-    # Falls keine Dividenden oder Laufzeit sehr kurz, ist die Rendite null
+# If there are effectively no dividends or time to maturity is very short, set the yield to zero
     if pv_dividends < 1e-12 or time_to_maturity < 1e-12:
         return 0.0
     try:
@@ -90,7 +86,6 @@ def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time)
         parse_time_string(expire_time)
     )
     if expire_dt <= start_dt:
-        raise ValueError("Expiration  must be after start.")
+        raise ValueError("Expiration datetime must be after start datetime.")
     return calculate_year_fraction(start_dt, expire_dt)
-
 
