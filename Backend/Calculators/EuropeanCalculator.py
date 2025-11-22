@@ -1,13 +1,20 @@
-from typing import Dict, Any, Tuple
+from datetime import datetime
 import numpy as np
 from scipy.stats import norm
 from datetime import datetime
 from Utils import *
 
+# ---------------------------------------------------------
+# Filename: EuropeanCalculator.py
+# LastUpdated: 2025-11-16
+# Our Model assumes constant interest rates and no forward interest rates compared to Cboe
+# Description: Calculate the value of European options based on Black-Scholes without considering dividends
+# Possibility to inclued Prepaid-Forward
 
 
 
-def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
+
+def calculate_option_value(data):
     """
     Calculate the price and Greeks of a European option (call or put)
     using the Black-Scholes model with dividend yield adjustment.
@@ -34,80 +41,48 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     start_time = data["start_time"]
     expiration_date = data["expiration_date"]
     expiration_time = data["expiration_time"]
-    K = data["strike"]
-    S0 = data["stock_price"]
-    volatility = data["volatility"]
-    interest_rate = data["interest_rate"]
-    dividends_list = data.get("dividends", [])
+    strike = data["strike"]
+    S = data["stock_price"]
+    volatility = normalize_interest_rate_or_volatility(data['volatility'])
+    interest_rate = normalize_interest_rate_or_volatility(data['interest_rate'])
 
-    # Normalize volatility and interest rate (e.g. 20 → 0.20)
-    sigma = normalize_interest_rate_or_volatility(volatility)
-    r = normalize_interest_rate_or_volatility(interest_rate)
 
-    # Time to maturity in years (Actual/365) using Utils
-    T = calculate_time_to_maturity( start_date,start_time, expiration_date,expiration_time,
-)
+    T = calculate_time_to_maturity(start_date, start_time, expiration_date, expiration_time)
 
-    # If we have less than 5 dividends, we dont´t consider them. WHY? Because the other calculator also doesnt consider them
+
+    #The online calculator does only consider dividends if there are five or more dividends scheduled. Don´t ask my why
+    #Also why the greeks are not adapted to interest rates
     if len(dividends_list) < 5:
-        q = 0.0
+        stock_present_value = S
     else:
-        pv_div = calculate_present_value_dividends(
-            dividends_list,
-            start_date,
-            expiration_date,
-            r,
-        )
-        q = calc_continuous_dividend_yield(
-            stock_price=S0,
-            pv_dividends=pv_div,
-            time_to_maturity=T,
-        )
+        stock_present_value = S - calculate_present_value_dividends(data["dividends"], start_date, expiration_date,interest_rate)
 
-    # =====================================================
-    # 2) BLACK-SCHOLES CORE COMPUTATION (with dividend yield)
-    # =====================================================
 
-    sqrt_T = np.sqrt(T)
 
-    d1 = (np.log(S0 / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * sqrt_T)
-    d2 = d1 - sigma * sqrt_T
+    d1 = (np.log(S / strike) + (interest_rate + 0.5 * volatility ** 2) * T) / (volatility * np.sqrt(T))
+    d2 = d1 - volatility * np.sqrt(T)
 
     if option_type == "call":
-        price = S0 * np.exp(-q * T) * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-        delta = np.exp(-q * T) * norm.cdf(d1)
-        theta = (
-                - (S0 * np.exp(-q * T) * norm.pdf(d1) * sigma) / (2 * sqrt_T)
-                + q * S0 * np.exp(-q * T) * norm.cdf(d1)
-                - r * K * np.exp(-r * T) * norm.cdf(d2)
-        )
-        rho = K * T * np.exp(-r * T) * norm.cdf(d2)
-
-    elif option_type == "put":
-        price = K * np.exp(-r * T) * norm.cdf(-d2) - S0 * np.exp(-q * T) * norm.cdf(-d1)
-        delta = -np.exp(-q * T) * norm.cdf(-d1)
-        theta = (
-                - (S0 * np.exp(-q * T) * norm.pdf(d1) * sigma) / (2 * sqrt_T)
-                - q * S0 * np.exp(-q * T) * norm.cdf(-d1)
-                + r * K * np.exp(-r * T) * norm.cdf(-d2)
-        )
-        rho = -K * T * np.exp(-r * T) * norm.cdf(-d2)
+        price = stock_present_value * norm.cdf(d1) - strike * np.exp(-interest_rate * T) * norm.cdf(d2)
+        delta = norm.cdf(d1)
+        theta = (- (S * volatility * norm.pdf(d1)) / (2 * np.sqrt(T))
+                 - interest_rate * strike * np.exp(-interest_rate * T) * norm.cdf(d2))
+        rho = strike * T * np.exp(-interest_rate * T) * norm.cdf(d2)
     else:
-        raise ValueError("Option type must be 'call' or 'put'.")
+        price = strike * np.exp(-interest_rate * T) * norm.cdf(-d2) - stock_present_value * norm.cdf(-d1)
+        delta = -norm.cdf(-d1)
+        theta = (- (S * volatility * norm.pdf(d1)) / (2 * np.sqrt(T))
+                 + interest_rate * strike * np.exp(-interest_rate * T) * norm.cdf(-d2))
+        rho = -strike * T * np.exp(-interest_rate * T) * norm.cdf(-d2)
 
-    gamma = (np.exp(-q * T) * norm.pdf(d1)) / (S0 * sigma * sqrt_T)
-    vega = S0 * np.exp(-q * T) * norm.pdf(d1) * sqrt_T
-
-
-    # =====================================================
-    # 3) RETURN RESULTS (MainCalculator.py handles printing)
-    # =====================================================
+    gamma = norm.pdf(d1) / (S * volatility * np.sqrt(T))
+    vega = S * norm.pdf(d1) * np.sqrt(T)
 
     return {
-        "theoretical_price": float(round(price, 3)),
-        "delta": float(round(delta, 3)),
-        "gamma": float(round(gamma, 3)),
-        "theta": float(round(theta, 3)),
-        "vega": float(round(vega, 3)),
-        "rho": float(round(rho, 3)),
+        "theoretical_price": round(price, 3),
+        "delta": round(delta, 3),
+        "gamma": round(gamma, 3),
+        "rho": round(rho, 3),
+        "theta": round(theta, 3),
+        "vega": round(vega, 3),
     }
