@@ -1,6 +1,6 @@
 {
     "type": "call",
-    "exercise_style": "asian",
+    "exercise_style": "binary",
     "start_date": "2025-11-18",
     "start_time": "16:51:14",
     "expiration_date": "2026-12-31",
@@ -13,7 +13,7 @@
     "number_of_steps": 100,
     "number_of_simulations": 1000,
     "binary_payout": 120.0,
-    "binary_payoff_structure": "",
+    "binary_payoff_structure": "cash",
     "dividends": [
         {
             "date": "2025-11-28",
