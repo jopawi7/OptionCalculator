@@ -63,20 +63,11 @@ def calculate_option_value(data):
 
     if option_type == "call":
         price = stock_present_value * norm.cdf(d1) - strike * np.exp(-interest_rate * T) * norm.cdf(d2)
-        delta = norm.cdf(d1)
-        theta = (- (S * volatility * norm.pdf(d1)) / (2 * np.sqrt(T))
-                 - interest_rate * strike * np.exp(-interest_rate * T) * norm.cdf(d2))
-        rho = strike * T * np.exp(-interest_rate * T) * norm.cdf(d2)
     else:
         price = strike * np.exp(-interest_rate * T) * norm.cdf(-d2) - stock_present_value * norm.cdf(-d1)
-        delta = -norm.cdf(-d1)
-        theta = (- (S * volatility * norm.pdf(d1)) / (2 * np.sqrt(T))
-                 + interest_rate * strike * np.exp(-interest_rate * T) * norm.cdf(-d2))
-        rho = -strike * T * np.exp(-interest_rate * T) * norm.cdf(-d2)
 
-    gamma = norm.pdf(d1) / (S * volatility * np.sqrt(T))
-    vega = S * norm.pdf(d1) * np.sqrt(T)
 
+    delta, gamma, theta, vega, rho = calculate_greeks_without_dividend_payments(option_type, S,strike, interest_rate, volatility, T)
 
     # =====================================================
     # 3) RETURN RESULTS (MainCalculator.py handles printing)

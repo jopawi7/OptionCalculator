@@ -87,6 +87,7 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
             number_of_fixings,
             is_call=is_call_option,
         )
+
         delta, gamma, theta, vega, rho = calculate_greeks_without_dividend_payments(option_type, initial_stock_price,strike_price, risk_free_rate, volatility, time_to_maturity)
     else:
         # Default: arithmetic average via Monte Carlo
@@ -105,6 +106,7 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
             use_antithetic_variates=True,
             use_control_variate_technique=True,
         )
+
         delta, gamma, theta, vega, rho = calculate_greeks_without_dividend_payments(option_type, initial_stock_price, strike_price, risk_free_rate,volatility, time_to_maturity)
 
     # =====================================================
