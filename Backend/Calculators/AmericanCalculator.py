@@ -1,374 +1,464 @@
+"""
+Minimal American Option Pricer using Longstaff-Schwartz Algorithm
+Calculates option price and Greeks using Monte Carlo simulation
+"""
+
 import numpy as np
-from datetime import datetime, time
+from datetime import datetime
+from typing import Dict, Tuple
+import json
+import os
 
 
-# ---------------------------------------------------------
-# Filename: AmericanCalculator.py
-# LastUpdated: 2025-11-15
-# Description: AmericanOptionCalculator
-# ---------------------------------------------------------
-
-
-
-def monte_carlo_american_option(S0, K, r, sigma, T, steps, N, is_call):
+def read_inputs_from_file(filename=None):
     """
-    Price American option using Monte Carlo simulation with Longstaff-Schwartz algorithm.
-
-    Args:
-        S0: Initial stock price
-        K: Strike price
-        r: Risk-free rate (decimal)
-        sigma: Volatility
-        T: Time to maturity (years)
-        steps: Number of time steps
-        N: Number of simulation paths
-        is_call: True for call, False for put
-
-    Returns:
-        Option price
+    Read and normalize input parameters from a JSON file.
+    If no filename is provided, use ../Input/input.json relative to this script.
     """
-    if T <= 0:
-        if is_call:
-            return max(S0 - K, 0.0)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    if filename is None:
+        filename = os.path.join(base_dir, "..", "Input", "input.json")
+
+    filename = os.path.normpath(filename)
+
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"JSON file not found: {filename}")
+
+    with open(filename, "r") as f:
+        data = json.load(f)
+
+    # Normalize exercise style
+    data["exercise_style"] = data.get("exercise_style", "").lower()
+    
+    # Normalize option type
+    data["type"] = data.get("type", "").lower()
+
+    # Ensure dividends is a list
+    if not isinstance(data.get("dividends"), list):
+        data["dividends"] = []
+
+    return data
+
+
+class AmericanOptionPricer:
+    """
+    American option pricing using Longstaff-Schwartz algorithm
+    """
+    
+    def __init__(self, config: Dict):
+        """
+        Initialize the pricer with configuration
+        
+        Args:
+            config: Dictionary containing option parameters
+        """
+        self.type = config['type']  # 'call' or 'put'
+        self.strike = config['strike']
+        self.stock_price = config['stock_price']
+        self.volatility = config['volatility']
+        self.interest_rate = config['interest_rate']
+        self.number_of_simulations = config.get('number_of_simulations', 10000)
+        self.number_of_steps = config['number_of_steps']
+        
+        # Calculate time to maturity
+        start_dt = datetime.strptime(
+            f"{config['start_date']} {config['start_time']}", 
+            "%Y-%m-%d %H:%M:%S"
+        )
+        exp_dt = datetime.strptime(
+            f"{config['expiration_date']} {config['expiration_time']}", 
+            "%Y-%m-%d %H:%M:%S"
+        )
+        self.time_to_maturity = (exp_dt - start_dt).total_seconds() / (365.25 * 24 * 3600)
+        
+        # Handle dividends
+        self.dividends = config.get('dividends', [])
+        
+        # Random seed for reproducibility
+        self.rng = np.random.RandomState(42)
+        
+        # Store random numbers for common random numbers technique
+        self._base_random_numbers = None
+        
+    def simulate_paths(self, S0: float, use_stored_randoms: bool = False) -> np.ndarray:
+        """
+        Simulate stock price paths using Geometric Brownian Motion
+        Uses Common Random Numbers technique for variance reduction
+        
+        Args:
+            S0: Initial stock price
+            use_stored_randoms: If True, use stored random numbers for CRN
+            
+        Returns:
+            Array of shape (number_of_steps + 1, number_of_simulations)
+        """
+        dt = self.time_to_maturity / self.number_of_steps
+        n_steps = self.number_of_steps
+        n_sims = self.number_of_simulations
+        
+        # Initialize paths array
+        paths = np.zeros((n_steps + 1, n_sims))
+        paths[0] = S0
+        
+        # Generate or reuse random shocks (Common Random Numbers)
+        if use_stored_randoms and self._base_random_numbers is not None:
+            z = self._base_random_numbers
         else:
-            return max(K - S0, 0.0)
-
-    np.random.seed(42)  # For reproducibility
-
-    dt = T / steps
-    discount = np.exp(-r * dt)
-
-    # Simulate price paths
-    S = np.zeros((N, steps + 1))
-    S[:, 0] = S0
-
-    for t in range(1, steps + 1):
-        Z = np.random.standard_normal(N)
-        S[:, t] = S[:, t - 1] * np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * Z)
-
-    # Calculate payoffs at maturity
-    if is_call:
-        payoff = np.maximum(S[:, -1] - K, 0)
-    else:
-        payoff = np.maximum(K - S[:, -1], 0)
-
-    # Longstaff-Schwartz algorithm for early exercise
-    # Work backwards through time
-    for t in range(steps - 1, 0, -1):
-        # Intrinsic value at time t
-        if is_call:
-            intrinsic = np.maximum(S[:, t] - K, 0)
-        else:
-            intrinsic = np.maximum(K - S[:, t], 0)
-
-        # Find paths where early exercise is valuable (in the money)
-        itm = intrinsic > 0
-
-        if np.sum(itm) > 0:
-            # Regression to estimate continuation value
-            # Use polynomial basis functions: 1, S, S^2
-            X = S[itm, t]
-            Y = payoff[itm] * discount
-
-            # Fit polynomial regression
-            A = np.vstack([np.ones(len(X)), X, X ** 2]).T
-            try:
-                coeffs = np.linalg.lstsq(A, Y, rcond=None)[0]
-                continuation_value = A @ coeffs
-
-                # Exercise if intrinsic value > continuation value
-                exercise = intrinsic[itm] > continuation_value
-
-                # Update payoff for exercised paths
-                payoff[itm] = np.where(exercise, intrinsic[itm], payoff[itm] * discount)
-                # Update payoff for out-of-money paths
-                payoff[~itm] *= discount
-            except:
-                # If regression fails, just use intrinsic vs discounted continuation
-                payoff = np.maximum(intrinsic, payoff * discount)
-        else:
-            # No ITM paths, just discount
-            payoff *= discount
-
-    # Discount to present and average
-    option_price = np.mean(payoff) * discount
-
-    return option_price
-
-
-def calculate_option_value(data):
-    """
-    Calculates the option value for an American option using Monte Carlo simulation.
-
-    Args:
-        data: JSON-Object with all necessary data for the calculation.
-              Expected keys:
-              - type: "call" or "put"
-              - strike: Strike price
-              - stock_price: Current stock price
-              - interest_rate: Risk-free rate (can be in % or decimal)
-              - volatility: Volatility
-              - start_date: Start date (YYYY-MM-DD)
-              - start_time: Start time (HH:MM, HH:MM:SS, AM, PM, etc.)
-              - expiration_date: Expiration date (YYYY-MM-DD)
-              - expiration_time: Expiration time
-              - number_of_steps: Number of time steps (default 100)
-              - number_of_simulations: Number of MC simulations (default 10000)
-              - dividends: List of dividends (optional)
-
-    Returns:
-        dict: JSON-Object with the calculated values for the option.
-    """
-
-    # Parse Input to useable variables
-    strike_price = float(data["strike"])
-    risk_free_rate = normalize_interest_rate(data["interest_rate"])
-    sigma = float(data["volatility"])
-
-    # Calculate time to maturity using the utils function
-    time_to_maturity = calculate_time_to_maturity(
-        data["start_date"],
-        data.get("start_time", ""),
-        data["expiration_date"],
-        data.get("expiration_time", "")
-    )
-
-    # Check if option type is call or put
-    is_call = data["type"].lower() == "call"
-
-    # Number of steps and simulations for Monte Carlo
-    steps = int(data.get("number_of_steps", 100))
-    steps = max(1, steps)
-
-    # Number of simulation paths
-    simulations = int(data.get("number_of_simulations", 10000))
-    simulations = max(1000, simulations)
-
-    # Dividends handling using the utils function
-    pv_dividends = calculate_present_value_dividends(
-        data.get("dividends", []),
-        data["start_date"],
-        data["expiration_date"],
-        risk_free_rate
-    )
-
-    stock_price = max(
-        float(data["stock_price"]) - pv_dividends,
-        1e-12
-    )
-
-    # Edge case T<=0
-    if time_to_maturity <= 0:
-        price = max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
+            z = self.rng.standard_normal((n_steps, n_sims))
+            if not use_stored_randoms:
+                # Store for future use with CRN
+                self._base_random_numbers = z
+        
+        # Simulate paths using GBM
+        for t in range(1, n_steps + 1):
+            drift = (self.interest_rate - 0.5 * self.volatility ** 2) * dt
+            diffusion = self.volatility * np.sqrt(dt) * z[t - 1]
+            paths[t] = paths[t - 1] * np.exp(drift + diffusion)
+        
+        return paths
+    
+    def payoff(self, spot: np.ndarray) -> np.ndarray:
+        """
+        Calculate option payoff
+        
+        Args:
+            spot: Stock prices
+            
+        Returns:
+            Payoff values
+        """
+        if self.type == 'call':
+            return np.maximum(spot - self.strike, 0.0)
+        else:  # put
+            return np.maximum(self.strike - spot, 0.0)
+    
+    def discount_factor(self, t_from: float, t_to: float) -> float:
+        """
+        Calculate discount factor
+        
+        Args:
+            t_from: Start time
+            t_to: End time
+            
+        Returns:
+            Discount factor
+        """
+        return np.exp(-self.interest_rate * (t_to - t_from))
+    
+    def fit_continuation_value(self, x: np.ndarray, y: np.ndarray) -> np.polynomial.Polynomial:
+        """
+        Fit polynomial to approximate continuation value
+        
+        Args:
+            x: Stock prices (independent variable)
+            y: Discounted cash flows (dependent variable)
+            
+        Returns:
+            Fitted polynomial
+        """
+        return np.polynomial.Polynomial.fit(x, y, deg=2, rcond=None)
+    
+    def longstaff_schwartz(self, paths: np.ndarray) -> Tuple[float, np.ndarray]:
+        """
+        Implement Longstaff-Schwartz algorithm for American option pricing
+        
+        Args:
+            paths: Simulated stock price paths
+            
+        Returns:
+            Tuple of (option_value, optimal_exercise_times)
+        """
+        n_steps = paths.shape[0] - 1
+        n_sims = paths.shape[1]
+        dt = self.time_to_maturity / n_steps
+        
+        # Initialize cash flow matrix
+        cash_flows = np.zeros((n_steps + 1, n_sims))
+        
+        # Set terminal payoff
+        cash_flows[-1] = self.payoff(paths[-1])
+        
+        # Backward induction
+        for t in range(n_steps - 1, 0, -1):
+            # Current spot prices
+            spot = paths[t]
+            
+            # Immediate exercise value
+            exercise_value = self.payoff(spot)
+            
+            # Find in-the-money paths
+            itm = exercise_value > 0
+            
+            if np.sum(itm) > 0:
+                # Discount future cash flows
+                discount = self.discount_factor(t * dt, (t + 1) * dt)
+                continuation_cf = cash_flows[t + 1] * discount
+                
+                # Fit continuation value for ITM paths only
+                try:
+                    poly = self.fit_continuation_value(
+                        spot[itm], 
+                        continuation_cf[itm]
+                    )
+                    continuation_value = poly(spot)
+                    continuation_value[~itm] = 0  # Set OTM to 0
+                except:
+                    # If fitting fails, use zero continuation
+                    continuation_value = np.zeros_like(spot)
+                
+                # Exercise if immediate value > continuation value
+                exercise = (exercise_value > continuation_value) & itm
+                
+                # Update cash flows
+                cash_flows[t] = np.where(
+                    exercise,
+                    exercise_value,
+                    cash_flows[t + 1] * discount
+                )
+            else:
+                # No ITM paths, continue holding
+                discount = self.discount_factor(t * dt, (t + 1) * dt)
+                cash_flows[t] = cash_flows[t + 1] * discount
+        
+        # Discount cash flows to present value
+        option_value = np.mean(cash_flows[1] * self.discount_factor(0, dt))
+        
+        return option_value, cash_flows
+    
+    def calculate_greeks(self, base_price: float) -> Dict[str, float]:
+        """
+        Calculate option Greeks using finite differences with variance reduction
+        Uses Common Random Numbers (CRN) and optimized bumps
+        
+        Args:
+            base_price: Base option price
+            
+        Returns:
+            Dictionary containing Greeks
+        """
+        greeks = {}
+        
+        # Store original values
+        original_S = self.stock_price
+        original_vol = self.volatility
+        original_r = self.interest_rate
+        original_ttm = self.time_to_maturity
+        
+        # Optimized bumps (smaller = less bias, but need CRN to reduce variance)
+        bump_s_pct = 0.01  # 1% for stock
+        bump_v = 0.01      # 1% absolute for volatility
+        bump_t = 1/365.25  # 1 day
+        bump_r = 0.01      # 1% absolute for rate (was 0.0001, too small)
+        
+        # === DELTA with CRN ===
+        bump_s = bump_s_pct * self.stock_price
+        
+        self.stock_price = original_S + bump_s
+        paths_up = self.simulate_paths(self.stock_price, use_stored_randoms=True)
+        price_up, _ = self.longstaff_schwartz(paths_up)
+        
+        self.stock_price = original_S - bump_s
+        paths_down = self.simulate_paths(self.stock_price, use_stored_randoms=True)
+        price_down, _ = self.longstaff_schwartz(paths_down)
+        
+        self.stock_price = original_S
+        greeks['delta'] = (price_up - price_down) / (2 * bump_s)
+        
+        # === GAMMA with CRN ===
+        greeks['gamma'] = (price_up - 2 * base_price + price_down) / (bump_s ** 2)
+        
+        # === VEGA with CRN ===
+        self.volatility = original_vol + bump_v
+        paths_vega_up = self.simulate_paths(self.stock_price, use_stored_randoms=True)
+        price_vega_up, _ = self.longstaff_schwartz(paths_vega_up)
+        
+        self.volatility = original_vol - bump_v
+        paths_vega_down = self.simulate_paths(self.stock_price, use_stored_randoms=True)
+        price_vega_down, _ = self.longstaff_schwartz(paths_vega_down)
+        
+        self.volatility = original_vol
+        greeks['vega'] = (price_vega_up - price_vega_down) / (2 * bump_v)
+        
+        # === THETA with CRN (central difference) ===
+        # Theta = dV/dt (change in value as time passes)
+        # We reduce time, so if value decreases, theta is negative (time decay)
+        self.time_to_maturity = max(original_ttm - bump_t, 0.001)
+        paths_theta = self.simulate_paths(self.stock_price, use_stored_randoms=True)
+        price_theta, _ = self.longstaff_schwartz(paths_theta)
+        self.time_to_maturity = original_ttm
+        
+        # theta = (V(t-dt) - V(t)) / dt, with convention that theta is negative for decay
+        greeks['theta'] = (price_theta - base_price) / bump_t
+        
+        # === RHO with CRN and larger bump ===
+        self.interest_rate = original_r + bump_r
+        paths_rho_up = self.simulate_paths(self.stock_price, use_stored_randoms=True)
+        price_rho_up, _ = self.longstaff_schwartz(paths_rho_up)
+        
+        self.interest_rate = original_r - bump_r
+        paths_rho_down = self.simulate_paths(self.stock_price, use_stored_randoms=True)
+        price_rho_down, _ = self.longstaff_schwartz(paths_rho_down)
+        
+        self.interest_rate = original_r
+        greeks['rho'] = (price_rho_up - price_rho_down) / (2 * bump_r)
+        
+        # Restore original values
+        self.stock_price = original_S
+        self.volatility = original_vol
+        self.interest_rate = original_r
+        self.time_to_maturity = original_ttm
+        
+        return greeks
+    
+    def price(self) -> Dict[str, any]:
+        """
+        Calculate American option price and Greeks
+        
+        Returns:
+            Dictionary containing price and Greeks
+        """
+        # Simulate paths and store random numbers for CRN
+        paths = self.simulate_paths(self.stock_price, use_stored_randoms=False)
+        
+        # Calculate option price
+        option_price, _ = self.longstaff_schwartz(paths)
+        
+        # Calculate Greeks using CRN
+        greeks = self.calculate_greeks(option_price)
+        
         return {
-            "theoretical_price": round(price, 3),
-            "delta": 0.0,
-            "gamma": 0.0,
-            "rho": 0.0,
-            "theta": 0.0,
-            "vega": 0.0,
+            'theoretical_price': round(option_price, 4),
+            'delta': round(greeks['delta'], 4),
+            'gamma': round(greeks['gamma'], 6),
+            'vega': round(greeks['vega'], 4),
+            'theta': round(greeks['theta'], 4),
+            'rho': round(greeks['rho'], 4),
+            'parameters': {
+                'stock_price': self.stock_price,
+                'strike': self.strike,
+                'volatility': self.volatility,
+                'interest_rate': self.interest_rate,
+                'time_to_maturity': round(self.time_to_maturity, 4),
+                'simulations': self.number_of_simulations,
+                'steps': self.number_of_steps
+            }
         }
 
-    # Pricing function for bumps
-    def price_fn(Sv, sigmav, rv, Tv):
-        return monte_carlo_american_option(
-            Sv, strike_price, rv, sigmav, max(Tv, 0.0), steps, simulations, is_call
-        )
 
-    # Base price
-    base_price = price_fn(stock_price, sigma, risk_free_rate, time_to_maturity)
+def main():
+    """
+    Main function with interactive input similar to binary option calculator
+    """
+    print("\n" + "="*60)
+    print("AMERICAN OPTION CALCULATOR (Longstaff-Schwartz)")
+    print("="*60)
+    
+    choice = input("\nUse JSON file input? (y/n): ").strip().lower()
 
-    # Step sizes for Greeks
-    h = max(0.01 * stock_price, 1e-4)
-    ds = max(0.01 * sigma, 1e-4)
-    dr = 1e-4
+    if choice == "y":
+        try:
+            data = read_inputs_from_file()
+            print("✓ Loaded input from ../Input/input.json")
+        except Exception as e:
+            print(f"Error loading JSON: {e}")
+            print("\nTrying to load from current directory...")
+            try:
+                data = read_inputs_from_file("input.json")
+                print("✓ Loaded input from ./input.json")
+            except:
+                print("✗ Could not find input.json file")
+                exit(1)
+    else:
+        print("\nEnter parameters manually:\n")
+        data = {
+            "type": input("Option type (call / put): ").strip().lower(),
+            "exercise_style": "american",
+            "start_date": input("Start date (YYYY-MM-DD): ").strip(),
+            "start_time": input("Start time (HH:MM:SS, default 09:00:00): ").strip() or "09:00:00",
+            "expiration_date": input("Expiration date (YYYY-MM-DD): ").strip(),
+            "expiration_time": input("Expiration time (HH:MM:SS, default 16:00:00): ").strip() or "16:00:00",
+            "strike": float(input("Strike: ")),
+            "stock_price": float(input("Stock price: ")),
+            "volatility": float(input("Volatility (decimal, e.g. 0.2 for 20%): ")),
+            "interest_rate": float(input("Interest rate (decimal, e.g. 0.05 for 5%): ")),
+            "number_of_steps": int(input("Number of time steps (default 50): ") or 50),
+            "number_of_simulations": int(input("Number of simulations (default 10000): ") or 10000),
+            "average_type": "arithmetic",
+            "dividends": []
+        }
+    
+    # Validate exercise style
+    if data.get("exercise_style", "").lower() != "american":
+        print(f"\n⚠️  Warning: This calculator is for American options only.")
+        print(f"   Exercise style '{data.get('exercise_style')}' will be treated as American.")
+        data["exercise_style"] = "american"
+    
+    print("\n" + "="*60)
+    print("CALCULATING...")
+    print("="*60)
+    
+    try:
+        # Create pricer and calculate
+        pricer = AmericanOptionPricer(data)
+        results = pricer.price()
+        
+        # Print results
+        print("\n" + "="*60)
+        print("RESULTS")
+        print("="*60)
+        print(f"\nOption Type: {data['type'].upper()}")
+        print(f"Exercise Style: American")
+        
+        print(f"\nParameters:")
+        print(f"  Stock Price: ${results['parameters']['stock_price']:.2f}")
+        print(f"  Strike Price: ${results['parameters']['strike']:.2f}")
+        print(f"  Volatility: {results['parameters']['volatility']*100:.2f}%")
+        print(f"  Risk-free Rate: {results['parameters']['interest_rate']*100:.2f}%")
+        print(f"  Time to Maturity: {results['parameters']['time_to_maturity']:.4f} years")
+        print(f"  Simulations: {results['parameters']['simulations']:,}")
+        print(f"  Time Steps: {results['parameters']['steps']}")
+        
+        print(f"\nPricing Results:")
+        print(f"  theoretical_price: {results['theoretical_price']}")
+        
+        print(f"\nGreeks:")
+        print(f"  delta: {results['delta']}")
+        print(f"  gamma: {results['gamma']}")
+        print(f"  vega: {results['vega']}")
+        print(f"  theta: {results['theta']}")
+        print(f"  rho: {results['rho']}")
+        print("="*60)
+        
+        # Save results to JSON in Output directory
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(base_dir, "..", "Output")
+        
+        # Create Output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+        
+        output_file = os.path.join(output_dir, "american_option_output.json")
+        
+        # Prepare output in same format as binary
+        output_data = {
+            "theoretical_price": results['theoretical_price'],
+            "delta": results['delta'],
+            "gamma": results['gamma'],
+            "vega": results['vega'],
+            "theta": results['theta'],
+            "rho": results['rho']
+        }
+        
+        with open(output_file, 'w') as f:
+            json.dump(output_data, f, indent=2)
+        
+        print(f"\n✓ Results saved to: {output_file}")
+        
+    except Exception as e:
+        print(f"\nCalculation error: {e}")
+        import traceback
+        traceback.print_exc()
 
-    # Delta and Gamma (central differences)
-    p_up = price_fn(stock_price + h, sigma, risk_free_rate, time_to_maturity)
-    p_dn = price_fn(max(stock_price - h, 1e-12), sigma, risk_free_rate, time_to_maturity)
-    delta = (p_up - p_dn) / (2 * h)
-    gamma = (p_up - 2 * base_price + p_dn) / (h * h)
 
-    # Vega (central diff) scaled per +1 vol point
-    p_vs_up = price_fn(stock_price, sigma + ds, risk_free_rate, time_to_maturity)
-    p_vs_dn = price_fn(stock_price, max(sigma - ds, 1e-12), risk_free_rate, time_to_maturity)
-    vega = (p_vs_up - p_vs_dn) / (2 * ds)
-    vega_pct = vega / 100.0  # per +1% vol
-
-    # Rho (central diff) scaled per +1% rate
-    p_r_up = price_fn(stock_price, sigma, risk_free_rate + dr, time_to_maturity)
-    p_r_dn = price_fn(stock_price, sigma, max(risk_free_rate - dr, -1.0), time_to_maturity)
-    rho = (p_r_up - p_r_dn) / (2 * dr)
-    rho_pct = rho / 100.0
-
-    # Theta per day: V(T_minus) - V(T)
-    one_day = 1.0 / 365.0
-    T_minus = max(time_to_maturity - one_day, 0.0)
-    p_T_minus = price_fn(stock_price, sigma, risk_free_rate, T_minus)
-    theta_per_day = p_T_minus - base_price
-
-    return {
-        "theoretical_price": round(base_price, 3),
-        "delta": round(delta, 3),
-        "gamma": round(gamma, 3),
-        "rho": round(rho_pct, 3),
-        "theta": round(theta_per_day, 3),
-        "vega": round(vega_pct, 3),
-    }
-
-
-# Example usage
 if __name__ == "__main__":
-    # Example data matching the new format
-    data = {
-        "type": "call",
-        "exercise_style": "american",
-        "start_date": "2025-11-16",
-        "start_time": "17:22:34",
-        "expiration_date": "2026-04-30",
-        "expiration_time": "AM",
-        "strike": 100,
-        "stock_price": 299,
-        "volatility": 0.20,
-        "interest_rate": 1.5,
-        "number_of_steps": 100,
-        "number_of_simulations": 10000,
-        "dividends": [
-            {"date": "2025-11-20", "amount": 1.0},
-            {"date": "2025-11-21", "amount": 2.0}
-        ]
-    }
-
-    result = calculate_option_value(data)
-    print("Option Pricing Results:")
-    print(f"Theoretical Price: {result['theoretical_price']}")
-    print(f"Delta: {result['delta']}")
-    print(f"Gamma: {result['gamma']}")
-    print(f"Vega: {result['vega']}")
-    print(f"Theta: {result['theta']}")
-    print(f"Rho: {result['rho']}")
-
-
-
-"""
-Code for AmericanCalculator with binomial Model. Unfortunately we should use the monte carlo simulation.
-
-def _american_binomial_calculation(stock_price, strike_price, risk_free_rate, dividend_yield, sigma, time_to_maturity, steps, is_call=True):
-    stock_price = max(stock_price, 1e-12)
-    if time_to_maturity <= 0:
-        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
-    dt = time_to_maturity / steps
-    if sigma <= 0 or dt <= 0:
-        # No volatility: price equals intrinsic at start (no time value)
-        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
-    u = math.exp(sigma * math.sqrt(dt))
-    d = 1.0 / u
-    if abs(u - d) < 1e-14:
-        return max(stock_price - strike_price, 0.0) if is_call else max(strike_price - stock_price, 0.0)
-    disc = math.exp(-risk_free_rate * dt)
-    drift = math.exp((risk_free_rate - dividend_yield) * dt)
-    p = (drift - d) / (u - d)
-    # clamp to [0,1] to avoid arbitrage issues from numerics
-    p = max(0.0, min(1.0, p))
-
-    # Terminal values
-    vals = [0.0] * (steps + 1)
-    S_ud = stock_price * (d ** steps)
-    for j in range(steps + 1):
-        S_T = S_ud * (u / d) ** j
-        intrinsic = max(S_T - strike_price, 0.0) if is_call else max(strike_price - S_T, 0.0)
-        vals[j] = intrinsic
-
-    # Backward induction with early exercise
-    for i in range(steps - 1, -1, -1):
-        for j in range(i + 1):
-            cont = disc * (p * vals[j + 1] + (1 - p) * vals[j])
-            S_ij = stock_price * (u ** j) * (d ** (i - j))
-            exercise = max(S_ij - strike_price, 0.0) if is_call else max(strike_price - S_ij, 0.0)
-            vals[j] = max(cont, exercise)
-    return vals[0]
-"""
-
-def calculate_year_fraction(start_dt, end_dt):
-    """
-    Calculates the fraction of a year between two dates using the Actual/365 convention.
-    """
-    return max((end_dt - start_dt).total_seconds() / (365 * 24 * 3600), 0.0)
-
-def normalize_interest_rate(x):
-    """
-    1.5 -> 0.015 ; -1.5 -> -0.015
-    0.05 stays 0.05 ; -0.005 stays -0.005
-    """
-    x = float(x)
-    return x / 100.0 if abs(x) > 1 else x
-
-
-def parse_time_string(time_string: str):
-    if not time_string:
-        return time(0, 0, 0)
-    tstr = str(time_string).strip().lower()
-    if tstr == "am":
-        return time(9, 30, 0)   # or whatever mapping you intend
-    if tstr == "pm":
-        return time(15, 30, 0)  # ditto
-
-    try:
-        return datetime.strptime(tstr, "%H:%M:%S").time()
-    except ValueError as e:
-        raise ValueError(
-            f"Invalid time string: {time_string!r}. Expected 'HH:MM:SS' or 'am'/'pm'."
-        ) from e
-
-
-def calculate_present_value_dividends(dividend_list, start_date, expiry_date, risk_free_rate):
-    """
-    Calculates the present value of dividends between start_date and expiry_date.
-    """
-
-    # Convert start_date and expiry_date to datetime if they are strings
-    if isinstance(start_date, str):
-        start_date = datetime.strptime(start_date, "%Y-%m-%d")
-    if isinstance(expiry_date, str):
-        expiry_date = datetime.strptime(expiry_date, "%Y-%m-%d")
-
-    if not isinstance(dividend_list, list):
-        return 0.0
-
-    present_value = 0.0
-    for single_dividend in dividend_list:
-        pay_date = datetime.strptime(single_dividend["date"], "%Y-%m-%d")
-        if start_date < pay_date < expiry_date:
-            T = calculate_year_fraction(start_date, pay_date)
-            present_value += float(single_dividend["amount"]) * np.exp(-risk_free_rate * T)
-    return present_value
-
-def calc_continuous_dividend_yield(stock_price, pv_dividends, time_to_maturity):
-    # Falls keine Dividenden oder Laufzeit sehr kurz, ist die Rendite null
-    if pv_dividends < 1e-12 or time_to_maturity < 1e-12:
-        return 0.0
-    try:
-        q = - (1.0 / time_to_maturity) * np.log((stock_price - pv_dividends) / stock_price)
-    except Exception:
-        q = 0.0
-    return q
-
-
-def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time):
-    """
-    Calculate time to maturity in years based on start_date, start_time, expire_date, expire_time.
-    Throws ValueError if expiration datetime is not after start datetime.
-    """
-    start_dt = datetime.combine(
-        datetime.strptime(start_date, "%Y-%m-%d").date(),
-        parse_time_string(start_time)
-    )
-    expire_dt = datetime.combine(
-        datetime.strptime(expire_date, "%Y-%m-%d").date(),
-        parse_time_string(expire_time)
-    )
-    if expire_dt <= start_dt:
-        raise ValueError("Expiration datetime must be after start datetime.")
-    return calculate_year_fraction(start_dt, expire_dt)
-
-
+    main()
