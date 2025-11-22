@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict, Any, Tuple
 import math
 import numpy as np
-from Utils import *
+from Backend.Calculators.Utils import *
 
 
 # ---------------------------------------------------------
@@ -30,8 +30,8 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
       - volatility: float
       - interest_rate: float
       - average_type: "arithmetic" or "geometric"
-      - number_of_steps : int
-      - number_of_simulations: int
+        - number_of_steps / n_fixings: int
+      - number_of_simulations / mc_sims: int
       - dividends: list of {"date": "YYYY-MM-DD", "amount": float}
     """
 
