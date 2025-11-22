@@ -68,7 +68,7 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     continuous_dividend_yield = calc_continuous_dividend_yield(initial_stock_price,present_value_dividends,time_to_maturity)
 
     # MC time step (if not provided, use uniform grid over T)
-    mc_dt = float(data.get("number_of_steps",time_to_maturity / max(number_of_fixings, 1) ))
+    mc_dt = time_to_maturity / max(number_of_fixings, 1)
     is_call_option = (option_type == "call")
 
     # =====================================================
