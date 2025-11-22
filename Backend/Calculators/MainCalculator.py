@@ -101,8 +101,6 @@ def calculate_option():
     except jsonschema.ValidationError as e:
         raise
 
-
-
     # Select the corresponding calculator and calculate results
     output_obj = None
     match input_obj['exercise_style']:
@@ -113,8 +111,6 @@ def calculate_option():
         case "asian":
             print("=== ASIAN OPTION INPUTS ===")
             print_input(input_obj, True, True, True, True,True,True,True,True,True, True, True,True, True, False, False, True)
-
-
             output_obj = calcOptionAsian(input_obj)
         case "binary":
             print("=== BINARY OPTION INPUTS ===")
