@@ -3,15 +3,6 @@ import math
 import numpy as np
 from Utils import *
 
-# ---------------------------------------------------------
-# Filename: AsianCalculator.py
-# Description:
-#   Pricing and Greeks for an ASIAN option with dividends.
-#   The main entry point is `calculate_option_value(data)`,
-#   using the same data structure as the other calculators.
-# ---------------------------------------------------------
-
-
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     """
     Compute the theoretical price and Greeks of an Asian option with dividends.
@@ -32,6 +23,7 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
       - number_of_simulations: int
       - dividends: list of {"date": "YYYY-MM-DD", "amount": float}
     """
+
     # =====================================================
     # 1) EXTRACT AND CALCULATE PARAMETERS
     # =====================================================

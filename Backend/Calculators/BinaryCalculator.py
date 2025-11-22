@@ -3,7 +3,6 @@ from scipy.stats import norm
 from Utils import *
 from typing import Any, Dict
 
-
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
 
     """
