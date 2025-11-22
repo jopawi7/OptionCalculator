@@ -35,10 +35,8 @@ def calculate_option():
 
     #TODO – Code input dialog and write Json Schema
     print(
-        "Do you want to enter new data (type 'new') or use the existing data in input.json (type 'json')?\n"
-        "If you put data directly into the JSON file, please adhere strictly to the input_schema; otherwise, the calculation will not run.\n"
-    )
-
+        "Do you want to enter new data ('new') or use the existing data in input.json ('json')?\n"
+        "If you put data directly into the JSON file, please adhere strictly to the input_schema; otherwise, the calculation will not run.\n")
 
     #If new input dialog make dialog... else skip:
     if ask_until_valid_string("Your choice (new/json): ", {"new", "json"}) == "new":
@@ -84,7 +82,6 @@ def calculate_option():
 
 
         input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
-
 
 
     else:
