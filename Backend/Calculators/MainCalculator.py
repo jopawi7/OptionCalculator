@@ -82,7 +82,6 @@ def calculate_option():
 
         input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
 
-
     else:
         # Transform all Stings to lowercase if person wrote to json.file. Otherwise this step happens directly when user inserts new value
         input_obj['type'] = input_obj['type'].lower()
