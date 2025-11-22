@@ -111,11 +111,21 @@ def calculate_option():
             output_obj = calcOptionAmerican(input_obj)
         case "asian":
             print("=== ASIAN OPTION INPUTS ===")
-            print_input(input_obj, True, True, True, True,True,True,True,True,True, True, True,True, True, False, False, True)
+            if input_obj['average_type'] == "geometric":
+                #For geometric simulation numbers are not needed
+                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, True, False, False,False, False, True)
+            else:
+                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, True, True, True,False, False, True)
             output_obj = calcOptionAsian(input_obj)
         case "binary":
             print("=== BINARY OPTION INPUTS ===")
-            print_input(input_obj, True, True, True, True, True,True, True, True, True, True, False, False, False, True, True, True)
+            if input_obj['binary_payoff_structure'] == "cash":
+                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,True, True, True)
+            elif input_obj['binary_payoff_structure'] == "asset":
+                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,True, True, True)
+            else:
+                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,True, True, True)
+
             output_obj = calcOptionBinary(input_obj)
         case "european":
             print("=== EUROPEAN OPTION INPUTS ===")
