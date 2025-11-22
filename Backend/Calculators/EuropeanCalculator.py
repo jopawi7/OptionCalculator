@@ -48,7 +48,7 @@ def calculate_option_value(data):
     T = calculate_time_to_maturity(start_date, start_time, expiration_date, expiration_time)
 
     #The online calculator does only consider dividends if there are five or more dividends scheduled. Don´t ask my why
-    #Also why the greeks are not adapted to interest rates
+    #They also do not adapt greeks to dividend payments.
     if len(dividends_list) < 5:
         stock_present_value = S
     else:
