@@ -143,8 +143,6 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
         time_to_maturity,
     )
 
-    print(f"Present value of dividends: {present_value_dividends}")
-    print(f"Implied continuous dividend yield q: {continuous_dividend_yield}")
 
     # MC time step (if not provided, use uniform grid over T)
     mc_dt = float(
