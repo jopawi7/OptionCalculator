@@ -6,6 +6,13 @@ from scipy.stats import norm
 
 from Utils import *
 
+# ---------------------------------------------------------
+# Filename: BinaryCalculatr.py
+# Created: 2025-11-22
+# Calculate the price and Greeks of a European binary option (call or put)
+# under the Black–Scholes model with continuous dividend yield.
+# ---------------------------------------------------------
+
 
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     """

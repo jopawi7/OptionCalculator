@@ -3,19 +3,20 @@ import numpy as np
 from typing import Dict, Any, Tuple
 from scipy.stats import norm
 
-
 # ---------------------------------------------------------
 # Filename: Utils.py
-# LastUpdated: 2025-11-16
+# LastUpdated: 2025-11-22
 # Description: Utility functions for calculations
 # ---------------------------------------------------------
 
-def calculate_year_fraction(start_dt, end_dt):
+#calculates the fraction of a year depending on start date and end date
+def calculate_year_fraction(start_daytime, end_daytime):
     """
     Calculates the fraction of a year between two dates using the Actual/365 convention.
     """
-    return max((end_dt - start_dt).total_seconds() / (365 * 24 * 3600), 0.0)
+    return max((end_daytime - start_daytime).total_seconds() / (365 * 24 * 3600), 0.0)
 
+#normalizes interest rate
 def normalize_interest_rate_or_volatility(x):
     """
     1.5 -> 0.015 ; -1.5 -> -0.015
@@ -24,7 +25,7 @@ def normalize_interest_rate_or_volatility(x):
     x = float(x)
     return x / 100.0 if abs(x) > 1 else x
 
-
+#Parse am/pm to daytime
 def parse_time_string(time_string: str):
     if not time_string:
         return time(0, 0, 0)
@@ -42,6 +43,7 @@ def parse_time_string(time_string: str):
         ) from e
 
 
+#Calculates the present value of all discrete dividend payments
 def calculate_present_value_dividends(dividend_list, start_date, expiry_date, risk_free_rate):
     """
     Calculates the present value of dividends between start_date and expiry_date.
@@ -64,6 +66,8 @@ def calculate_present_value_dividends(dividend_list, start_date, expiry_date, ri
             present_value += float(single_dividend["amount"]) * np.exp(-risk_free_rate * T)
     return present_value
 
+
+#Calculates continous dividend yield q
 def calc_continuous_dividend_yield(stock_price, pv_dividends, time_to_maturity):
 # If there are effectively no dividends or time to maturity is very short, set the yield to zero
     if pv_dividends < 1e-12 or time_to_maturity < 1e-12:
@@ -75,6 +79,7 @@ def calc_continuous_dividend_yield(stock_price, pv_dividends, time_to_maturity):
     return q
 
 
+#Calculates time to maturity
 def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time):
     """
     Calculate time to maturity in years based on start_date, start_time, expire_date, expire_time.
@@ -94,6 +99,7 @@ def calculate_time_to_maturity(start_date, start_time, expire_date, expire_time)
     return calculate_year_fraction(start_dt, expire_dt)
 
 
+#Function to calculate greeks wihtout dividend payments
 def calculate_greeks_without_dividend_payments(option_type: str,S: float, strike: float, interest_rate: float,volatility: float,T: float) -> Tuple[float, float, float, float, float]:
     d1 = (np.log(S / strike) + (interest_rate + 0.5 * volatility ** 2) * T) / (volatility * np.sqrt(T))
     d2 = d1 - volatility * np.sqrt(T)

@@ -20,8 +20,4 @@ The output is always provided in the following JSON format. NEVER remove keys in
 
 ## Mathematical Constraints
 #theoretical_price is always greater than or equal to zero.
-#delta ranges from -1 to 1 (negative for puts, positive for calls).
-#gamma and vega are non-negative values (≥ 0).
-#theta is typically less than or equal to zero (reflecting time decay).
-#rho can be positive or negative, depending on the option type and market conditions.
 

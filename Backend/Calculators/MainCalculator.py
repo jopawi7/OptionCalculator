@@ -6,11 +6,11 @@ from AmericanCalculator import calculate_option_value as calcOptionAmerican
 from AsianCalculator import calculate_option_value as calcOptionAsian
 from BinaryCalculator import calculate_option_value as calcOptionBinary
 from EuropeanCalculator import calculate_option_value as calcOptionEuropean
-from ValidateInput import *
+from UtilsInput import *
 
 # ---------------------------------------------------------
 # Filename: MainCalculator.py
-# Created: 2025-11-17
+# Created: 2025-11-22
 # Description: Reads input.json, Calculates the Corresponding results, Writes it into output.json
 # ---------------------------------------------------------
 
@@ -42,7 +42,7 @@ def calculate_option():
         input_obj['type'] = ask_until_valid_string("Which option type do you want to calculate? (call|put): ", {"call", "put"})
         input_obj['exercise_style'] = ask_until_valid_string("Which exercise style do you want (american|european|asian|binary): ", {"american", "european", "asian", "binary"} )
 
-
+        #Validate until valid pair of dates
         while True:
             input_obj['start_date'] = ask_until_valid_date("When does the option start? (YYYY-MM-DD): ")
             input_obj['start_time'] = ask_until_valid_time("At what time does the option start? (HH:MM:SS or AM/PM): ")
@@ -52,6 +52,8 @@ def calculate_option():
                 break
             print("The start date must be before the expiration date.")
 
+
+        #Ask for strike and stock price
         input_obj['strike'] = ask_until_valid_number("Enter strike price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
         input_obj['stock_price'] = ask_until_valid_number("Enter stock price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
 
@@ -59,7 +61,7 @@ def calculate_option():
         input_obj['interest_rate'] = prompt_and_validate("Enter interest rate (percent), e.g. 1.5 for 1.5%: ", validate_interest_rate)
 
 
-        #Special cases binary
+        #Special cases binary option
         if input_obj['exercise_style'] == 'binary':
             input_obj['binary_payoff_structure'] = ask_until_valid_string("Binary option type (cash | asset | custom): ", {"cash", "asset", "custom"})
             if input_obj['binary_payoff_structure'] == "custom":
@@ -67,7 +69,7 @@ def calculate_option():
             if input_obj['binary_payoff_structure'] == "cash":
                 input_obj['binary_payout'] = 1.0
 
-        #Special cases asian
+        #Special cases asian option
         if input_obj['exercise_style'] == 'asian':
             input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})
 
@@ -78,14 +80,12 @@ def calculate_option():
             input_obj['number_of_simulations'] = ask_until_valid_integer("Enter number of simulations (>= 1): ",
                                                                          minimum=1, maximum=100000)
 
-
-        #Discrete Dividends or Dividend Stream
+    #Discrete Dividends or Dividend Stream
         dividend_choice = ask_until_valid_string("Do you want to enter discrete dividends or a dividend stream or no dividends? (no|discrete|stream): ", {"no", "discrete", "stream"})
         if dividend_choice == "discrete":
             input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
         elif dividend_choice == "stream":
             input_obj['dividends'] = generate_dividend_stream(ask_until_valid_date("When should the dividend stream begin? (YYYY-MM-DD): "), input_obj['expiration_date'], ask_until_valid_number("Enter dividend amount (>= 0.01): ", minimum=0.01, exclusive_minimum=False), ask_until_valid_integer("Enter day interval of dividend streams (>= 1): ", minimum=1))
-
 
     else:
         # Transform all Stings to lowercase if person wrote to json.file. Otherwise this step happens directly when user inserts new value
@@ -106,7 +106,7 @@ def calculate_option():
     except jsonschema.ValidationError as e:
         raise
 
-    # Select the corresponding calculator and calculate results
+    # Select the corresponding calculator, print the field used for calculation and calculate results
     output_obj = None
     match input_obj['exercise_style']:
         case "american":

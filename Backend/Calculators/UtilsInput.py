@@ -1,6 +1,14 @@
 import re
 from datetime import datetime, timedelta
 
+# ---------------------------------------------------------
+# Filename: UtilsInput.py
+# Created: 2025-11-22
+# Description: Summarize Input Object, Validate Inputs, Handling of dividend input
+# ---------------------------------------------------------
+
+
+#TODO - Summarizes input_object
 #Print input.json
 def print_input(input_obj, *bool_flags):
     keys = list(input_obj.keys())
@@ -11,6 +19,7 @@ def print_input(input_obj, *bool_flags):
             print(f"{key}: {value}")
 
 
+#TODO - Input validation
 #Asks until the string is valid
 def ask_until_valid_string(prompt, valid_options):
     valid_options = {opt.lower() for opt in valid_options}
@@ -86,7 +95,6 @@ def ask_until_valid_integer(prompt, minimum=None, maximum=None):
 #Validate start_date before expiration date
 def validate_start_expiration(start_date, start_time, expiration_date, expiration_time):
     def parse_dt(date_str, time_str):
-        # Zeitstrings wie „am“/„pm“ wandeln wir auf feste Zeiten um
         if time_str.lower() == 'am':
             time_str = '09:30:00'
         elif time_str.lower() == 'pm':
@@ -98,7 +106,7 @@ def validate_start_expiration(start_date, start_time, expiration_date, expiratio
 
     return start_dt <= exp_dt
 
-#Validates prompt
+#Validates prompt for validate volatility and validate interest_rate
 def prompt_and_validate(prompt_text, validate_func):
     while True:
         user_input = input(prompt_text)
@@ -129,7 +137,8 @@ def validate_interest_rate(value):
         raise ValueError("Interest rate must be a number.")
     return ir
 
-#Dividend handling:
+
+#Ask for yes or no
 def ask_yes_no(prompt):
     while True:
         ans = input(prompt + " (yes/no): ").strip().lower()
@@ -137,6 +146,7 @@ def ask_yes_no(prompt):
             return ans == 'yes'
         print("Please answer 'yes' or 'no'.")
 
+#Aks until valid date in range
 def ask_until_valid_date_in_range(prompt, start_date, end_date):
     date_pattern = r"^\d{4}-\d{2}-\d{2}$"
     regex = re.compile(date_pattern)
@@ -151,6 +161,7 @@ def ask_until_valid_date_in_range(prompt, start_date, end_date):
             continue
         return date_str
 
+#Asks until the amount is valid (float)
 def ask_until_valid_amount(prompt):
     while True:
         val_str = input(prompt).strip().replace(',', '.')
@@ -163,10 +174,13 @@ def ask_until_valid_amount(prompt):
         except ValueError:
             print("Invalid number. Please try again.")
 
+
+#TODO - Input of dividend prompting
+#Ask for discrete dividend payments
 def input_dividends(start_date, expiration_date):
     dividends = []
     if not ask_yes_no("Do you want to enter dividends?"):
-        return []    # If no, return empty list
+        return []
     print("Please enter dividends between the start and expiration dates:")
     while True:
         date = ask_until_valid_date_in_range("Enter dividend date (YYYY-MM-DD): ", start_date, expiration_date)
@@ -177,11 +191,10 @@ def input_dividends(start_date, expiration_date):
     return dividends
 
 
-
+#Function to create dividen streams
 def generate_dividend_stream( start_date: str, expiration_date: str,dividend_amount: float,day_interval: int) -> list[dict]:
     dividends = []
 
-    # Convert Date
     start = datetime.strptime(start_date, "%Y-%m-%d")
     end = datetime.strptime(expiration_date, "%Y-%m-%d")
 

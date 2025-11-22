@@ -6,10 +6,10 @@ from Utils import *
 
 # ---------------------------------------------------------
 # Filename: EuropeanCalculator.py
-# LastUpdated: 2025-11-16
-# Our Model assumes constant interest rates and no forward interest rates compared to Cboe
-# Description: Calculate the value of European options based on Black-Scholes without considering dividends
-# Possibility to inclued Prepaid-Forward
+# Created: 2025-11-22
+# Description: Calculates the value of European options based on Black-Scholes
+# We deduct the present value of dividends from the present value of the underlying
+# ---------------------------------------------------------
 
 
 def calculate_option_value(data):

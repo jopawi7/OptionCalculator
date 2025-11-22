@@ -4,12 +4,19 @@ import numpy as np
 from typing import Dict, Any, Tuple
 from Utils import *
 
+# ---------------------------------------------------------
+# Filename: AmericanCalculator.py
+# Created: 2025-11-22
+# Price an American option (call or put) using Monte Carlo simulation
+# with Longstaff–Schwartz for early exercise and discrete dividends.
+# ---------------------------------------------------------
+
 DATE_FMT = "%Y-%m-%d"
 
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     """
     Price an American option (call or put) using Monte Carlo simulation
-    with Longstaff–Schwartz for early exercise and **discrete dividend jumps**.
+    with Longstaff–Schwartz for early exercise and discrete dividend jumps.
 
     Expected keys in `data` (same style as other calculators):
       - type: "call" or "put"
