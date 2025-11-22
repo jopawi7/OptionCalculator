@@ -80,6 +80,13 @@ def calculate_option():
             except ValueError as e:
                 print(f"Error: {e}")
 
+        if input_obj['exercise_style'] == 'binary':
+            cash_vs_asset_or_nothing = ask_until_valid_string("Binary option type (cash | asset):: ", {"cash", "asset"})
+            if cash_vs_asset_or_nothing == "cash":
+                input_obj['binary_payout'] = ask_until_valid_number("Enter binary payout (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
+            else:
+                input_obj['binary_payout'] =  input_obj['stock_price']
+
         if input_obj['exercise_style'] == 'asian':
             input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})
 

@@ -92,6 +92,7 @@
     "average_type",
     "number_of_steps",
     "number_of_simulations",
+    "binary_payout",
     "dividends"
   ],
   "additionalProperties": false
