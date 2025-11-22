@@ -12,19 +12,16 @@
       "maximum": 1
     },
     "gamma": {
-      "type": "number",
-      "minimum": 0
+      "type": "number"
     },
     "rho": {
       "type": "number"
     },
     "theta": {
-      "type": "number",
-      "maximum": 0
+      "type": "number"
     },
     "vega": {
       "type": "number",
-      "minimum": 0
     }
   },
   "required": ["theoretical_price", "delta", "gamma", "rho", "theta", "vega"],

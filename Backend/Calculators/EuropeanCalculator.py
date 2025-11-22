@@ -60,6 +60,10 @@ def calculate_option_value(data):
 
 
 
+    # =====================================================
+    # 2) BLACK-SCHOLES CORE COMPUTATION (with dividend yield)
+    # =====================================================
+
     d1 = (np.log(S / strike) + (interest_rate + 0.5 * volatility ** 2) * T) / (volatility * np.sqrt(T))
     d2 = d1 - volatility * np.sqrt(T)
 
@@ -79,6 +83,10 @@ def calculate_option_value(data):
     gamma = norm.pdf(d1) / (S * volatility * np.sqrt(T))
     vega = S * norm.pdf(d1) * np.sqrt(T)
 
+
+    # =====================================================
+    # 3) RETURN RESULTS (MainCalculator.py handles printing)
+    # =====================================================
     return {
         "theoretical_price": round(price, 3),
         "delta": round(delta, 3),
