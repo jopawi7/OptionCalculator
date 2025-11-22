@@ -33,7 +33,7 @@ export class AppComponent {
       startDate: [new Date().toISOString().split('T')[0], [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
       startTime: [new Date().toTimeString().slice(0, 8), [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/)]],
       expirationDate: ['', [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
-      expirationTime: ['', [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/)]],
+      expirationTime: ['09:00:00', [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/)]],
       strike: [100.0, [Validators.required, Validators.min(0.01)]],
       stockPrice: [120, [Validators.required, Validators.min(0.01)]],
       volatility: [20, [Validators.required, Validators.min(0.0000001)]],
