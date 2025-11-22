@@ -1,6 +1,16 @@
 import re
 from datetime import datetime
 
+#Print input.json
+def print_input(input_obj, *bool_flags):
+    keys = list(input_obj.keys())
+    for i, flag in enumerate(bool_flags):
+        if flag and i < len(keys):
+            key = keys[i]
+            value = input_obj[key]
+            print(f"{key}: {value}")
+
+
 #Asks until the string is valid
 def ask_until_valid_string(prompt, valid_options):
     valid_options = {opt.lower() for opt in valid_options}

@@ -1,4 +1,4 @@
-from datetime import datetime
+from typing import Dict, Any, Tuple
 import numpy as np
 from scipy.stats import norm
 from datetime import datetime
@@ -7,7 +7,7 @@ from Utils import *
 
 
 
-def calculate_option_value(data):
+def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     """
     Calculate the price and Greeks of a European option (call or put)
     using the Black-Scholes model with dividend yield adjustment.

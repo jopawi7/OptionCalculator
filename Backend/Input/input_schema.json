@@ -53,7 +53,7 @@
     "number_of_simulations": {
       "type": "integer",
       "minimum": 1,
-      "maximum": 1000000
+      "maximum": 100000
     },
      "binary_payout": {
       "type": "number",

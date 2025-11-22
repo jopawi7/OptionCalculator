@@ -104,28 +104,27 @@ def calculate_option():
         raise
 
 
-    #Print which data is used to calculate the option price
-
-
-
-
-
-
-
-
-
-
 
     # Select the corresponding calculator and calculate results
     output_obj = None
     match input_obj['exercise_style']:
         case "american":
+            print("=== AMERICAN OPTION INPUTS ===")
+            print_input(input_obj, True, True, True, True, True,True, True, True, True, True, False, True, True, False, False, True)
             output_obj = calcOptionAmerican(input_obj)
         case "asian":
+            print("=== ASIAN OPTION INPUTS ===")
+            print_input(input_obj, True, True, True, True,True,True,True,True,True, True, True,True, True, False, False, True)
+
+
             output_obj = calcOptionAsian(input_obj)
         case "binary":
+            print("=== BINARY OPTION INPUTS ===")
+            print_input(input_obj, True, True, True, True, True,True, True, True, True, True, False, False, False, True, True, True)
             output_obj = calcOptionBinary(input_obj)
         case "european":
+            print("=== EUROPEAN OPTION INPUTS ===")
+            print_input(input_obj, True, True, True, True, True,True, True, True, True, True, False, False, False, False, False, True)
             output_obj = calcOptionEuropean(input_obj)
         case _:
             raise ValueError("Invalid exercise style")
