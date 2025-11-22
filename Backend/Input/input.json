@@ -1,6 +1,6 @@
 {
     "type": "call",
-    "exercise_style": "european",
+    "exercise_style": "asian",
     "start_date": "2025-11-22",
     "start_time": "20:14:22",
     "expiration_date": "2026-12-31",
@@ -15,17 +15,5 @@
     "binary_payout": 120.0,
     "binary_payoff_structure": "cash",
     "dividends": [
-        {
-            "date": "2026-02-28",
-            "amount": 3.0
-        },
-        {
-            "date": "2026-03-31",
-            "amount": 3.0
-        },
-        {
-            "date": "2026-05-01",
-            "amount": 3.0
-        }
     ]
 }
