@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 #Print input.json
 def print_input(input_obj, *bool_flags):
@@ -26,9 +26,16 @@ def ask_until_valid_date(prompt):
     regex = re.compile(date_pattern)
     while True:
         val = input(prompt).strip()
-        if regex.fullmatch(val):
+        if not regex.fullmatch(val):
+            print("Invalid date format. Please use YYYY-MM-DD.")
+            continue
+        try:
+            # Hier erfolgt die echte Validierung des Datums
+            datetime.strptime(val, "%Y-%m-%d")
             return val
-        print("Invalid date format. Please use YYYY-MM-DD.")
+        except ValueError:
+            print("Invalid date. Please enter a real calendar date.")
+
 
 #Asls until the time is in a valid format
 def ask_until_valid_time(prompt):
@@ -168,3 +175,23 @@ def input_dividends(start_date, expiration_date):
         if not ask_yes_no("Add another dividend?"):
             break
     return dividends
+
+
+
+def generate_dividend_stream( start_date: str, expiration_date: str,dividend_amount: float,day_interval: int) -> list[dict]:
+    dividends = []
+
+    # Convert Date
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(expiration_date, "%Y-%m-%d")
+
+    current_date = start
+    while current_date <= end:
+        dividends.append({
+            "date": current_date.strftime("%Y-%m-%d"),
+            "amount": dividend_amount
+        })
+        current_date += timedelta(days=day_interval)
+
+    return dividends
+

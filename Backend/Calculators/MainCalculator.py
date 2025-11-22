@@ -52,9 +52,8 @@ def calculate_option():
                 break
             print("The start date must be before the expiration date.")
 
-        input_obj['stock_price'] = ask_until_valid_number("Enter stock price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
         input_obj['strike'] = ask_until_valid_number("Enter strike price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
-
+        input_obj['stock_price'] = ask_until_valid_number("Enter stock price (>= 0.01): ", minimum=0.01, exclusive_minimum=False)
 
         input_obj['volatility'] = prompt_and_validate("Enter volatility (> 0), e.g. 0.20 for 20%: ", validate_volatility)
         input_obj['interest_rate'] = prompt_and_validate("Enter interest rate (percent), e.g. 1.5 for 1.5%: ", validate_interest_rate)
@@ -80,7 +79,13 @@ def calculate_option():
                                                                          minimum=1, maximum=100000)
 
 
-        input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
+        #Discrete Dividends or Dividend Stream
+        dividend_choice = ask_until_valid_string("Do you want to enter discrete dividends or a dividend stream or no dividends? (no|discrete|stream): ", {"no", "discrete", "stream"})
+        if dividend_choice == "discrete":
+            input_obj['dividends'] = input_dividends(input_obj['start_date'], input_obj['expiration_date'])
+        elif dividend_choice == "stream":
+            input_obj['dividends'] = generate_dividend_stream(ask_until_valid_date("When should the dividend stream begin? (YYYY-MM-DD): "), input_obj['expiration_date'], ask_until_valid_number("Enter dividend amount (>= 0.01): ", minimum=0.01, exclusive_minimum=False), ask_until_valid_integer("Enter day interval of dividend streams (>= 1): ", minimum=1))
+
 
     else:
         # Transform all Stings to lowercase if person wrote to json.file. Otherwise this step happens directly when user inserts new value

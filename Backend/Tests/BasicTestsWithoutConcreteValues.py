@@ -1,28 +1,3 @@
-"""
-STRICT FORMAT TEST SUITE - 60 Test Cases
-==========================================
-
-All test cases use EXACTLY the input format:
-{
-  "type": "call" | "put",
-  "exercise_style": "american" | "european" | "asian" | "binary",
-  "start_date": "YYYY-MM-DD",
-  "start_time": "HH:MM:SS" | "AM" | "PM",
-  "expiration_date": "YYYY-MM-DD",
-  "expiration_time": "HH:MM:SS" | "AM" | "PM",
-  "strike": float,
-  "stock_price": float,
-  "volatility": float,
-  "interest_rate": float,
-  "average_type": "arithmetic" | "geometric" (Asian only),
-  "number_of_steps": int,
-  "number_of_simulations": int,
-  "dividends": [{"date": "YYYY-MM-DD", "amount": float}, ...]
-}
-
-Dividends: Flexible number of discrete payments, ONLY this section can vary.
-"""
-
 import pytest
 import numpy as np
 from datetime import datetime, timedelta
@@ -35,7 +10,6 @@ from Backend.Calculators.AmericanCalculator import calculate_option_value as ame
 from Backend.Calculators.AsianCalculator import calculate_option_value as asian_calc
 from Backend.Calculators.BinaryCalculator import calculate_option_value as binary_calc
 from Backend.Calculators.EuropeanCalculator import calculate_option_value as european_calc
-
 
 
 # ===================================================================
