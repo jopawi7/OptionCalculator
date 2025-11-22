@@ -9,6 +9,17 @@ from typing import Dict, Tuple
 import json
 import os
 
+def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
+    return {
+        "option_price": float(round(0, 3)),
+        "delta": float(round(0, 3)),
+        "gamma": float(round(0, 3)),
+        "theta": float(round(0, 3)),
+        "vega": float(round(0, 3)),
+        "rho": float(round(0, 3)),
+    }
+
+
 
 def read_inputs_from_file(filename=None):
     """
