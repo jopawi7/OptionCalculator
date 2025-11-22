@@ -106,6 +106,7 @@ def calculate_option():
     match input_obj['exercise_style']:
         case "american":
             print("=== AMERICAN OPTION INPUTS ===")
+            #Selects which parameters to show from input.json
             print_input(input_obj, True, True, True, True, True,True, True, True, True, True, False, True, True, False, False, True)
             output_obj = calcOptionAmerican(input_obj)
         case "asian":
