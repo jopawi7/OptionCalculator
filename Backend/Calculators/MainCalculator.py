@@ -71,10 +71,10 @@ def calculate_option():
 
         #Special cases asian option
         if input_obj['exercise_style'] == 'asian':
-            input_obj['average_type'] = ask_until_valid_string("Enter average type (arithmetic|geometric): ", {"arithmetic", "geometric"})
+            input_obj['average_type'] = ask_until_valid_string("Enter the average type for the asian calculator (arithmetic|geometric): ", {"arithmetic", "geometric"})
 
         #Special cases asian and american
-        if input_obj['exercise_style'] == 'asian' or input_obj['exercise_style'] == 'american':
+        if (input_obj['exercise_style'] == 'asian' and input_obj['average_type'] == 'arithmetic') or input_obj['exercise_style'] == 'american':
             input_obj['number_of_steps'] = ask_until_valid_integer("Enter number of steps (>= 1) for MC-Simulation: ", minimum=1,
                                                                    maximum=10001)
             input_obj['number_of_simulations'] = ask_until_valid_integer("Enter number of simulations (>= 1): ",
