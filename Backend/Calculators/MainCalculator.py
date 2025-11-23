@@ -75,9 +75,9 @@ def calculate_option():
         #Special cases asian and american
         if (input_obj['exercise_style'] == 'asian' and input_obj['average_type'] == 'arithmetic') or input_obj['exercise_style'] == 'american':
             input_obj['number_of_steps'] = ask_until_valid_integer("Enter number of steps (>= 1) for MC-Simulation: ", minimum=1,
-                                                                   maximum=10001)
+                                                                   maximum=10000)
             input_obj['number_of_simulations'] = ask_until_valid_integer("Enter number of simulations (>= 1): ",
-                                                                         minimum=1, maximum=10001)
+                                                                         minimum=1, maximum=100000)
 
     #Discrete Dividends or Dividend Stream
         dividend_choice = ask_until_valid_string("Do you want to enter discrete dividends or a dividend stream or no dividends? (no|discrete|stream): ", {"no", "discrete", "stream"})

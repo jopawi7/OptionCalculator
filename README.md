@@ -31,7 +31,6 @@ The system supports four distinct option exercise styles, each with specialized 
   - Polynomial basis functions (1, S, S²) for continuation value estimation
   - Discrete dividend support with precise jump adjustments
   - Common random numbers for consistent Greeks calculation
-- **Simulation Parameters**: Configurable number of steps (1-10,001) and simulations (1-10,001)
 - **Use Case**: Equity options, corporate securities, any American-style contract
 
 #### **Asian Options**
@@ -73,7 +72,8 @@ All option styles return the complete Greeks toolbox:
 **Implementation Details**:
 - Black-Scholes models use analytical derivatives
 - Binary options employ finite differences (step sizes: 1e-4)
-- Asian and American models use numerical differentiation with variance reduction
+- Asian model: bumb and reprice
+- American models use numerical differentiation with variance reduction
 - All Greeks rounded to 3 decimal places for precision
 
 ---
