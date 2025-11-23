@@ -9,14 +9,42 @@ from datetime import datetime, timedelta
 
 
 #TODO - Summarizes input_object
+#Keys necessary for which calculation
+AMERICAN_KEYS = [
+    "type", "exercise_style", "start_date", "start_time", "expiration_date",
+    "expiration_time", "strike", "stock_price", "volatility", "interest_rate",
+    "number_of_steps", "number_of_simulations", "dividends"
+]
+ASIAN_KEYS = [
+    "type", "exercise_style", "start_date", "start_time", "expiration_date",
+    "expiration_time", "strike", "stock_price", "volatility", "interest_rate",
+    "average_type", "number_of_steps", "number_of_simulations", "dividends"
+]
+ASIAN_GEOM_KEYS = [
+    "type", "exercise_style", "start_date", "start_time", "expiration_date",
+    "expiration_time", "strike", "stock_price", "volatility", "interest_rate",
+    "average_type", "dividends"
+]
+BINARY_ASSET_KEYS = [
+    "type", "exercise_style", "start_date", "start_time", "expiration_date",
+    "expiration_time", "strike", "stock_price", "volatility", "interest_rate",
+    "binary_payoff_structure", "dividends"
+]
+BINARY_DEFAULT_KEYS = [
+    "type", "exercise_style", "start_date", "start_time", "expiration_date",
+    "expiration_time", "strike", "stock_price", "volatility", "interest_rate",
+    "binary_payout", "binary_payoff_structure", "dividends"
+]
+EUROPEAN_KEYS = [
+    "type", "exercise_style", "start_date", "start_time", "expiration_date",
+    "expiration_time", "strike", "stock_price", "volatility", "interest_rate", "dividends"
+]
+
 #Print input.json
-def print_input(input_obj, *bool_flags):
-    keys = list(input_obj.keys())
-    for i, flag in enumerate(bool_flags):
-        if flag and i < len(keys):
-            key = keys[i]
-            value = input_obj[key]
-            print(f"{key}: {value}")
+def print_input(input_obj, keys):
+    for key in keys:
+        if key in input_obj:
+            print(f"{key}: {input_obj[key]}")
 
 
 #TODO - Input validation

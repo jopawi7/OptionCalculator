@@ -115,29 +115,25 @@ def calculate_option():
     match input_obj['exercise_style']:
         case "american":
             print("=== AMERICAN OPTION INPUTS ===")
-            #Selects which parameters to show from input.json
-            print_input(input_obj, True, True, True, True, True,True, True, True, True, True, False, True, True, False, False, True)
+            print_input(input_obj, AMERICAN_KEYS)
             output_obj = calcOptionAmerican(input_obj)
         case "asian":
             print("=== ASIAN OPTION INPUTS ===")
-            if input_obj['average_type'] == "geometric":
-                #For geometric simulation numbers are not needed
-                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, True, False, False,False, False, True)
+            if input_obj.get('average_type') == "geometric":
+                print_input(input_obj, ASIAN_GEOM_KEYS)
             else:
-                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, True, True, True,False, False, True)
+                print_input(input_obj, ASIAN_KEYS)
             output_obj = calcOptionAsian(input_obj)
         case "binary":
             print("=== BINARY OPTION INPUTS ===")
-           #For assets binary valuetion we do not nee to show binary_payoff
-            if input_obj['binary_payoff_structure'] == "asset":
-                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,False, True, True)
+            if input_obj.get('binary_payoff_structure') == "asset":
+                print_input(input_obj, BINARY_ASSET_KEYS)
             else:
-                print_input(input_obj, True, True, True, True, True, True, True, True, True, True, False, False, False,True, True, True)
-
+                print_input(input_obj, BINARY_DEFAULT_KEYS)
             output_obj = calcOptionBinary(input_obj)
         case "european":
             print("=== EUROPEAN OPTION INPUTS ===")
-            print_input(input_obj, True, True, True, True, True,True, True, True, True, True, False, False, False, False, False, True)
+            print_input(input_obj, EUROPEAN_KEYS)
             output_obj = calcOptionEuropean(input_obj)
         case _:
             raise ValueError("Invalid exercise style")
