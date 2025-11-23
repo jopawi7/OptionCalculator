@@ -31,7 +31,7 @@ def parse_time_string(time_string: str):
         return time(0, 0, 0)
     tstr = str(time_string).strip().lower()
     if tstr == "am":
-        return time(9, 30, 0)   # or whatever mapping you intend
+        return time(9, 30, 0)
     if tstr == "pm":
         return time(16, 00, 0)  # ditto
 

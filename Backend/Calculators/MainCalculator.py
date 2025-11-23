@@ -7,6 +7,7 @@ from AsianCalculator import calculate_option_value as calcOptionAsian
 from BinaryCalculator import calculate_option_value as calcOptionBinary
 from EuropeanCalculator import calculate_option_value as calcOptionEuropean
 
+#Relative Import needed for Frontend/Absolute for MainCalculator.py
 try:
     from Backend.Calculators.UtilsInput import *
 except ImportError:
@@ -80,9 +81,9 @@ def calculate_option():
         #Special cases asian and american
         if input_obj['exercise_style'] == 'asian' or input_obj['exercise_style'] == 'american':
             input_obj['number_of_steps'] = ask_until_valid_integer("Enter number of steps (>= 1) for MC-Simulation: ", minimum=1,
-                                                                   maximum=1000)
+                                                                   maximum=10001)
             input_obj['number_of_simulations'] = ask_until_valid_integer("Enter number of simulations (>= 1): ",
-                                                                         minimum=1, maximum=100000)
+                                                                         minimum=1, maximum=10001)
 
     #Discrete Dividends or Dividend Stream
         dividend_choice = ask_until_valid_string("Do you want to enter discrete dividends or a dividend stream or no dividends? (no|discrete|stream): ", {"no", "discrete", "stream"})
@@ -95,6 +96,7 @@ def calculate_option():
 
     else:
         # Transform all Stings to lowercase if person wrote to json.file. Otherwise this step happens directly when user inserts new value
+        # This is to allow also for upper letters if person writes into input.hosn directcle
         input_obj['type'] = input_obj['type'].lower()
         input_obj['exercise_style'] = input_obj['exercise_style'].lower()
         input_obj['start_time'] = input_obj['start_time'].lower()
@@ -103,7 +105,8 @@ def calculate_option():
         input_obj['binary_payoff_structure'] = input_obj['binary_payoff_structure'].lower()
 
 
-    #Validate that Object fits to our input_schema.json, safe the updated object
+    #Validate that Object fits to our input_schema.json, Second Validation step after input validation
+    #Enscures that the input validation for the terminal dialog was writte right
     try:
         with open(input_path, 'w', encoding='utf-8') as f:
             json.dump(input_obj, f, ensure_ascii=False, indent=4)
@@ -112,7 +115,7 @@ def calculate_option():
     except jsonschema.ValidationError as e:
         raise
 
-    # Select the corresponding calculator, print the field used for calculation and calculate results
+    # Select the corresponding calculator, print the field used for calculation and calculate results, boolean flags mark which number should be shown
     output_obj = None
     match input_obj['exercise_style']:
         case "american":
@@ -155,6 +158,7 @@ def calculate_option():
     except jsonschema.ValidationError as e:
         raise
 
+    #Print Result Summary
     print("")
     print("----- Result Summary -----")
     print(f"Theoretical Price: {output_obj.get('theoretical_price', 'N/A')}")
