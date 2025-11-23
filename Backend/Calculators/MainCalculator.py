@@ -103,9 +103,9 @@ def calculate_option():
     #Validate that Object fits to our input_schema.json, Second Validation step after input validation
     #Enscures that the input validation for the terminal dialog was writte right
     try:
+        jsonschema.validate(instance=input_obj, schema=input_schema)
         with open(input_path, 'w', encoding='utf-8') as f:
             json.dump(input_obj, f, ensure_ascii=False, indent=4)
-        jsonschema.validate(instance=input_obj, schema=input_schema)
         print("\nThe input is valid! You are only seconds away from the option price.\n")
     except jsonschema.ValidationError as e:
         raise
