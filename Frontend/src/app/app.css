@@ -335,3 +335,91 @@ h1 {
   color: var(--pale-gold);
   margin-top: 0.25rem;
 }
+
+
+/* Error Banner Styles */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(12px, 2vw, 16px);
+  margin-bottom: clamp(16px, 2vw, 24px);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(192, 21, 47, 0.12), rgba(192, 21, 47, 0.08));
+  border: 1px solid rgba(192, 21, 47, 0.3);
+  box-shadow: 0 4px 12px rgba(192, 21, 47, 0.15);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-banner__content {
+  display: flex;
+  gap: clamp(12px, 2vw, 16px);
+  align-items: flex-start;
+  flex: 1;
+}
+
+.error-banner__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #ffacac;
+  margin-top: 2px;
+}
+
+.error-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.error-banner__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffacac;
+}
+
+.error-banner__message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #e6b3b3;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.error-banner__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-left: 12px;
+  background: transparent;
+  border: none;
+  color: #ffacac;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  border-radius: 4px;
+}
+
+.error-banner__close:hover {
+  color: #ff8888;
+}
+
+.error-banner__close svg {
+  width: 16px;
+  height: 16px;
+}

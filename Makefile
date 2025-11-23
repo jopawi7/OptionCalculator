@@ -28,9 +28,15 @@ FRONTEND_DIR := Frontend
 backend-install:
 	@cd $(BACKEND_DIR) $(SEP) $(PIP) install -r requirements.txt
 
-# install node dependencies in the frontend
+# Install node dependencies in the frontend (node.json and rpm on all platforms, @angular/cli with sudo on Unix)
 frontend-install:
 	@cd $(FRONTEND_DIR) $(SEP) npm install
+ifeq ($(OS),Windows_NT)
+	@cd $(FRONTEND_DIR) $(SEP) npm install -g @angular/cli
+else
+	@cd $(FRONTEND_DIR) $(SEP) sudo npm install -g @angular/cli
+endif
+
 
 # Start the backend (FastAPI with uvicorn)
 # Note: Background processes are different under Windows/cmd; start separately for development

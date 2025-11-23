@@ -7,7 +7,32 @@
     </div>
   </header>
 
-  <!-- Loading overlay -->
+
+  <!-- Error Warning Banner if problems with input valus during calculation -->
+@if (errorMessage()) {
+  <div class="error-banner">
+    <div class="error-banner__content">
+      <svg class="error-banner__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <div class="error-banner__text">
+        <h3 class="error-banner__title">Invalid Input</h3>
+        <p class="error-banner__message">{{ errorMessage() }}</p>
+      </div>
+    </div>
+    <button class="error-banner__close" (click)="clearError()" aria-label="Close error message">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+}
+
+
+  <!-- Loading overlay during calculation -->
   <div *ngIf="isLoading" class="loading-mask">
     <div class="circle"></div>
     <h1>Option Calculator</h1>

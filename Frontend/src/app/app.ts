@@ -1,7 +1,7 @@
 import { Component, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +14,9 @@ export class AppComponent {
   ready = signal(false);
   calculatorForm!: FormGroup;
   isLoading = false;
+
+  // Add this signal for error state
+  errorMessage = signal<string | null>(null);
 
   theoretical_price: number | null = null;
   delta: number | null = null;
@@ -76,22 +79,29 @@ export class AppComponent {
     if (value === 'cash') {
       this.setFormValue('binary_payout', 1);
     } else if (value === 'asset') {
-      // Keine Änderung an binary_payout
+      // No change to binary_payout
     }
-    // Bei 'custom' bleibt der Wert editierbar
+    // For 'custom', the value remains editable
     this.cdr.detectChanges();
   }
 
+  // Add this method to clear errors
+  clearError(): void {
+    this.errorMessage.set(null);
+  }
+
   onSubmit(): void {
+    // Clear previous errors
+    this.clearError();
+
     if (this.calculatorForm.invalid) {
       this.calculatorForm.markAllAsTouched();
       return;
     }
+
     this.isLoading = true;
     this.cdr.detectChanges();
-
     const v = this.calculatorForm.getRawValue();
-
     const payload: any = {
       type: v.type.toLowerCase(),
       exercise_style: v.style.toLowerCase(),
@@ -119,12 +129,29 @@ export class AppComponent {
         this.rho = res.rho;
         this.theta = res.theta;
         this.vega = res.vega;
-
         this.isLoading = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         console.error('Error from backend:', err);
+
+        // Extract error message from response
+        let message = 'An error occurred. Please check your input.';
+
+        if (err.error && typeof err.error === 'object') {
+          if (err.error.detail) {
+            // Handle FastAPI error format
+            message = err.error.detail;
+          } else if (err.error.message) {
+            message = err.error.message;
+          }
+        } else if (err.statusText) {
+          message = `${err.status}: ${err.statusText}`;
+        }
+
+        // Set the error message signal
+        this.errorMessage.set(message);
+
         this.isLoading = false;
         this.cdr.detectChanges();
       }
