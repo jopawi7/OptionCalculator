@@ -1,4 +1,8 @@
 For the input.json file only the following structure is accepted. NEVER remove keys in input.json
+
+Even if parameters are not used such as average_type, binary_payout, binary_payoff_structure
+they NEVER SHOULD BE NULL but have a valid value as DUMMY.
+
 {
   "type": "call" | "put",
   "exercise_style": "american" | "european" | "asian" | "binary",

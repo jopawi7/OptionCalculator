@@ -90,8 +90,8 @@ def calculate_option():
             input_obj['dividends'] = []
 
     else:
-        # Transform all Stings to lowercase if person wrote to json.file. Otherwise this step happens directly when user inserts new value
-        # This is to allow also for upper letters if person writes into input.hosn directcle
+        # Transform all Stings to lowercase if user wrote to json.file. Otherwise this step happens directly when user inserts new value
+        # This is to allow also for upper letters if user writes into input.json directly
         input_obj['type'] = input_obj['type'].lower()
         input_obj['exercise_style'] = input_obj['exercise_style'].lower()
         input_obj['start_time'] = input_obj['start_time'].lower()
