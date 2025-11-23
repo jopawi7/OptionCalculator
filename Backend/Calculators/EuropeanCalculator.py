@@ -78,12 +78,12 @@ def calculate_option_value(data):
     # 3) RETURN RESULTS (MainCalculator.py handles printing)
     # =====================================================
 
-    #Price can become negative because of discrete dividend treatment deduction
+    #Price can become negative because of discrete dividend treatment deduction <- for negative prices we return 0
     return {
         "theoretical_price": round(0 if price <= 0 else price, 3),
-        "delta": round(delta, 3),
-        "gamma": round(gamma, 3),
-        "rho": round(rho, 3),
-        "theta": round(theta, 3),
-        "vega": round(vega, 3),
+        "delta": round(0 if price <= 0 else delta, 3),
+        "gamma": round(0 if price <= 0 else gamma, 3),
+        "rho": round(0 if price <= 0 else rho, 3),
+        "theta": round(0 if price <= 0 else theta, 3),
+        "vega": round(0 if price <= 0  else vega, 3),
 }
