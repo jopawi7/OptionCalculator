@@ -20,4 +20,5 @@ The output is always provided in the following JSON format. NEVER remove keys in
 
 ## Mathematical Constraints
 #theoretical_price is always greater than or equal to zero.
+#delta is between -1 and 1
 

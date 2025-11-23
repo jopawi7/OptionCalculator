@@ -48,7 +48,7 @@
     "number_of_steps": {
       "type": "integer",
       "minimum": 1,
-      "maximum": 1000
+      "maximum": 10000
     },
     "number_of_simulations": {
       "type": "integer",
