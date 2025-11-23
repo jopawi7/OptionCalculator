@@ -1,7 +1,10 @@
 from typing import Dict, Any, Tuple
 import math
 import numpy as np
-from .Utils import *
+try:
+    from .Utils import *
+except ImportError:
+    from Utils import *
 
 
 # ---------------------------------------------------------

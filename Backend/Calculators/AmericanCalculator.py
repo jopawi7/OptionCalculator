@@ -2,7 +2,11 @@ from typing import Any, Dict, List, Tuple
 from datetime import datetime
 import numpy as np
 from typing import Dict, Any, Tuple
-from .Utils import *
+
+try:
+    from .Utils import *
+except ImportError:
+    from Utils import *
 
 
 # ---------------------------------------------------------

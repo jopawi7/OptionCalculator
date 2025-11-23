@@ -1,7 +1,11 @@
 from typing import Any, Dict
 import numpy as np
 from scipy.stats import norm
-from .Utils import *
+try:
+    from .Utils import *
+except ImportError:
+    from Utils import *
+
 
 
 # ---------------------------------------------------------
