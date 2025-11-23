@@ -8,8 +8,6 @@ try:
 except ImportError:
     from Utils import *
 
-
-
 # ---------------------------------------------------------
 # Filename: BinaryCalculatr.py
 # Created: 2025-11-22
