@@ -6,7 +6,6 @@ from AmericanCalculator import calculate_option_value as calcOptionAmerican
 from AsianCalculator import calculate_option_value as calcOptionAsian
 from BinaryCalculator import calculate_option_value as calcOptionBinary
 from EuropeanCalculator import calculate_option_value as calcOptionEuropean
-from Backend.Calculators.Utils import *
 from Backend.Calculators.UtilsInput import *
 
 
