@@ -8,7 +8,6 @@ try:
 except ImportError:
     from Utils import *
 
-
 # ---------------------------------------------------------
 # Filename: AsianCalculator.py
 # Description:
@@ -16,7 +15,6 @@ except ImportError:
 #   The main entry point is `calculate_option_value(data)`,
 #   using the same data structure as the other calculators.
 # ---------------------------------------------------------
-
 
 def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
     """
