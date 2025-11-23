@@ -26,9 +26,9 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
       - type: "call" or "put"
       - exercise_style: should be "asian"
       - start_date: "YYYY-MM-DD"
-      - start_time: "HH:MM:SS" or "AM"/"PM"
+      - start_time: "HH:MM:SS" or "am"/"pm"
       - expiration_date: "YYYY-MM-DD"
-      - expiration_time: "HH:MM:SS" or "AM"/"PM"
+      - expiration_time: "HH:MM:SS" or "am"/"pm"
       - strike: float
       - stock_price: float
       - volatility: float
@@ -90,8 +90,20 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
             number_of_fixings,
             is_call=is_call_option,
         )
-
-        delta, gamma, theta, vega, rho = calculate_greeks_without_dividend_payments(option_type, initial_stock_price,strike_price, risk_free_rate, volatility, time_to_maturity)
+        delta, gamma, theta, vega, rho = _bump_and_reprice_asian(
+            initial_stock_price,
+            strike_price,
+            risk_free_rate,
+            continuous_dividend_yield,
+            volatility,
+            time_to_maturity,
+            number_of_fixings,
+            number_of_simulations,
+            mc_dt,
+            random_seed,
+            average_price_type="geometric",
+            is_call=is_call_option,
+        )
     else:
         # Default: arithmetic average via Monte Carlo
         option_price = _asian_arithmetic_monte_carlo_price(
@@ -109,8 +121,20 @@ def calculate_option_value(data: Dict[str, Any]) -> Dict[str, float]:
             use_antithetic_variates=True,
             use_control_variate_technique=True,
         )
-
-        delta, gamma, theta, vega, rho = calculate_greeks_without_dividend_payments(option_type, initial_stock_price, strike_price, risk_free_rate,volatility, time_to_maturity)
+        delta, gamma, theta, vega, rho = _bump_and_reprice_asian(
+            initial_stock_price,
+            strike_price,
+            risk_free_rate,
+            continuous_dividend_yield,
+            volatility,
+            time_to_maturity,
+            number_of_fixings,
+            number_of_simulations,
+            mc_dt,
+            random_seed,
+            average_price_type="arithmetic",
+            is_call=is_call_option,
+        )
 
     # =====================================================
     # 3) RETURN RESULTS (Main.py handles printing)
@@ -281,3 +305,90 @@ def _asian_arithmetic_monte_carlo_price(
         _ = geo_price
 
     return crude_estimate
+
+
+# =========================================================
+# Greeks by bump-and-reprice
+# =========================================================
+
+def _bump_and_reprice_asian(
+    initial_stock_price: float,
+    strike_price: float,
+    risk_free_rate: float,
+    continuous_dividend_yield: float,
+    volatility: float,
+    time_to_maturity: float,
+    number_of_fixings: int,
+    number_of_simulations: int,
+    mc_dt: float,
+    random_seed: int,
+    average_price_type: str,
+    is_call: bool,
+) -> Tuple[float, float, float, float, float]:
+    """
+    Compute Greeks for an Asian option using bump-and-reprice.
+
+    Uses the same continuous dividend yield q for all bumped prices.
+    """
+
+    dS = 0.01 * initial_stock_price if initial_stock_price != 0 else 0.01
+    dvol = 0.01 * volatility if volatility != 0 else 0.001
+    dr = 1e-4
+    dT = 1.0 / 365.0  # one day
+
+    def price_fn(S_: float, vol_: float, r_: float, T_: float) -> float:
+        if average_price_type == "geometric":
+            return _asian_geometric_closed_form_price(
+                S_,
+                strike_price,
+                r_,
+                continuous_dividend_yield,
+                vol_,
+                T_,
+                number_of_fixings,
+                is_call=is_call,
+            )
+        else:
+            return _asian_arithmetic_monte_carlo_price(
+                S_,
+                strike_price,
+                r_,
+                continuous_dividend_yield,
+                vol_,
+                T_,
+                number_of_fixings,
+                number_of_simulations,
+                mc_dt,
+                random_seed,
+                is_call=is_call,
+                use_antithetic_variates=True,
+                use_control_variate_technique=True,
+            )
+
+    base_price = price_fn(initial_stock_price, volatility, risk_free_rate, time_to_maturity)
+
+    # Delta and Gamma
+    price_up_S = price_fn(initial_stock_price + dS, volatility, risk_free_rate, time_to_maturity)
+    price_down_S = price_fn(initial_stock_price - dS, volatility, risk_free_rate, time_to_maturity)
+    delta = (price_up_S - price_down_S) / (2.0 * dS)
+    gamma = (price_up_S - 2.0 * base_price + price_down_S) / (dS ** 2)
+
+    # Vega
+    price_up_vol = price_fn(initial_stock_price, volatility + dvol, risk_free_rate, time_to_maturity)
+    price_down_vol = price_fn(initial_stock_price, volatility - dvol, risk_free_rate, time_to_maturity)
+    vega = (price_up_vol - price_down_vol) / (2.0 * dvol)
+
+    # Rho
+    price_up_r = price_fn(initial_stock_price, volatility, risk_free_rate + dr, time_to_maturity)
+    price_down_r = price_fn(initial_stock_price, volatility, risk_free_rate - dr, time_to_maturity)
+    rho = (price_up_r - price_down_r) / (2.0 * dr)
+
+    # Theta
+    T_up = time_to_maturity + dT
+    T_down = max(time_to_maturity - dT, 1e-8)
+    price_up_T = price_fn(initial_stock_price, volatility, risk_free_rate, T_up)
+    price_down_T = price_fn(initial_stock_price, volatility, risk_free_rate, T_down)
+    dV_dT = (price_up_T - price_down_T) / (2.0 * dT)
+    theta = -dV_dT  # standard convention
+
+    return float(delta), float(gamma), float(theta), float(vega), float(rho)
