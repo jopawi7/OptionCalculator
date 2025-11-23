@@ -9,8 +9,6 @@ try:
 except ImportError:
     from Utils import *
 
-
-
 # ---------------------------------------------------------
 # Filename: AmericanCalculator.py
 # Created: 2025-11-22
