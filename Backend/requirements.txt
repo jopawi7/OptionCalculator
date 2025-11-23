@@ -2,6 +2,5 @@ fastapi
 jsonschema
 numpy
 pydantic
-pytest
 scipy
 starlette
