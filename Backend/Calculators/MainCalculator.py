@@ -2,16 +2,11 @@ import json
 
 import jsonschema
 import os
-from AmericanCalculator import calculate_option_value as calcOptionAmerican
-from AsianCalculator import calculate_option_value as calcOptionAsian
-from BinaryCalculator import calculate_option_value as calcOptionBinary
-from EuropeanCalculator import calculate_option_value as calcOptionEuropean
-
-#Relative Import needed for Frontend/Absolute for MainCalculator.py
-try:
-    from Backend.Calculators.UtilsInput import *
-except ImportError:
-    from UtilsInput import *
+from Backend.Calculators.AmericanCalculator import calculate_option_value as calcOptionAmerican
+from Backend.Calculators.AsianCalculator import calculate_option_value as calcOptionAsian
+from Backend.Calculators.BinaryCalculator import calculate_option_value as calcOptionBinary
+from Backend.Calculators.EuropeanCalculator import calculate_option_value as calcOptionEuropean
+from Backend.Calculators.UtilsInput import *
 
 # ---------------------------------------------------------
 # Filename: MainCalculator.py
