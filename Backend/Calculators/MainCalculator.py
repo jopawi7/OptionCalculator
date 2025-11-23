@@ -14,7 +14,6 @@ from Backend.Calculators.UtilsInput import *
 # Description: Reads input.json, Calculates the Corresponding results, Writes it into output.json
 # ---------------------------------------------------------
 
-
 def calculate_option():
     print("Hi, welcome to our Option Calculator!\n")
 
