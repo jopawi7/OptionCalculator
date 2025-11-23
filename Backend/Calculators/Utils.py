@@ -33,7 +33,7 @@ def parse_time_string(time_string: str):
     if tstr == "am":
         return time(9, 30, 0)   # or whatever mapping you intend
     if tstr == "pm":
-        return time(15, 30, 0)  # ditto
+        return time(16, 00, 0)  # ditto
 
     try:
         return datetime.strptime(tstr, "%H:%M:%S").time()
