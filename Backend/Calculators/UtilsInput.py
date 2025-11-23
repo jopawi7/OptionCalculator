@@ -104,7 +104,7 @@ def validate_start_expiration(start_date, start_time, expiration_date, expiratio
     start_dt = parse_dt(start_date, start_time)
     exp_dt = parse_dt(expiration_date, expiration_time)
 
-    return start_dt <= exp_dt
+    return start_dt < exp_dt
 
 #Validates prompt for validate volatility and validate interest_rate
 def prompt_and_validate(prompt_text, validate_func):
