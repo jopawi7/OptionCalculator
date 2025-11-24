@@ -91,7 +91,7 @@ The system offers three sophisticated dividend management modes:
 - Format: `{date: "YYYY-MM-DD", amount: float}`
 - **Processing**:
   - Present value calculation: PV = Σ D_i × e^(-r×t_i)
-  - European: Applied as stock price adjustment (only if ≥5 dividends)
+  - European: Applied as stock price adjustment
   - American: Precise discrete jumps in simulation paths
   - Asian: Converted to continuous yield (q)
   - Binary: Converted to continuous yield (q)
