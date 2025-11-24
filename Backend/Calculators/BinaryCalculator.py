@@ -2,10 +2,11 @@ from typing import Any, Dict
 import numpy as np
 from scipy.stats import norm
 
-#Relative Import needed for Frontend/Absolute for MainCalculator.py
 try:
+    #Import for Frontend from current package (relative import)
     from .Utils import *
 except ImportError:
+    #Import for Backend Absolute Import
     from Utils import *
 
 # ---------------------------------------------------------

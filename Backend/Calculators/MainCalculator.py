@@ -3,6 +3,7 @@ import json
 import jsonschema
 import os
 
+# Windows was not always able to find the whole package paths so we added an emergency option with locally imports
 try:
     from Backend.Calculators.AmericanCalculator import calculate_option_value as calcOptionAmerican
     from Backend.Calculators.AsianCalculator import calculate_option_value as calcOptionAsian
@@ -15,7 +16,6 @@ except ImportError:
     from BinaryCalculator import calculate_option_value as calcOptionBinary
     from EuropeanCalculator import calculate_option_value as calcOptionEuropean
     from UtilsInput import *
-
 
 # ---------------------------------------------------------
 # Filename: MainCalculator.py

@@ -57,3 +57,6 @@ frontend-clean:
 
 # Build everything with make all
 all: backend-install frontend-install backend-start frontend-start
+
+# Build everything if everything is pre-installed
+fast: backend-start frontend-start

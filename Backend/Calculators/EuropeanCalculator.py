@@ -4,10 +4,11 @@ from scipy.stats import norm
 from datetime import datetime
 
 
-#Relative Import needed for Frontend/Absolute for MainCalculator.py
 try:
+    #Import for Frontend from current package (relative import)
     from .Utils import *
 except ImportError:
+    #Import for Backend Absolute Import
     from Utils import *
 
 # ---------------------------------------------------------
@@ -49,7 +50,6 @@ def calculate_option_value(data):
     S = data["stock_price"]
     volatility = normalize_interest_rate_or_volatility(data['volatility'])
     interest_rate = normalize_interest_rate_or_volatility(data['interest_rate'])
-    dividends_list = data.get("dividends", [])
 
     T = calculate_time_to_maturity(start_date, start_time, expiration_date, expiration_time)
 
