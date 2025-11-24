@@ -1,6 +1,6 @@
 {
     "type": "call",
-    "exercise_style": "asian",
+    "exercise_style": "european",
     "start_date": "2020-11-11",
     "start_time": "09:00:00",
     "expiration_date": "2025-11-11",
