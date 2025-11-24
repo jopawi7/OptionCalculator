@@ -488,10 +488,10 @@ ng e2e
 ## Known Limitations & Assumptions
 
 1. **Dividend Dates**: Must fall strictly between start and expiration (not inclusive of expiration)
-2**American Early Exercise**: Optimal stopping not guaranteed for all path combinations (Longstaff-Schwartz is biased low)
-3**Asian Averaging**: Equal weighting of all fixings; no scheduled vs. actual date adjustments
-4**Greeks Calculation**: Numerical differences for some option types; analytical only for vanilla European5
-5**Time Convention**: Assumes 365-day year (not business day calendar)
+2. **American Early Exercise**: Optimal stopping not guaranteed for all path combinations (Longstaff-Schwartz is biased low)
+3. **Asian Averaging**: Equal weighting of all fixings; no scheduled vs. actual date adjustments
+4. **Greeks Calculation**: Numerical differences for some option types; analytical only for vanilla European5
+5. **Time Convention**: Assumes 365-day year (not business day calendar)
 
 ---
 
