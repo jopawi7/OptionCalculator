@@ -18,7 +18,7 @@ The system supports four distinct option exercise styles, each with specialized 
 - **Pricing Model**: Black-Scholes analytical formula
 - **Characteristics**: Can only be exercised at maturity
 - **Dividend Treatment**: 
-  - Discrete dividends applied only when 5+ dividends scheduled
+  - Discrete dividends applied - decucted from current stock price
   - Present value of dividends deducted from stock price
   - Greeks computed without dividend adjustments (per industry standard)
 - **Use Case**: Index options, currency options, standard equity derivatives
@@ -488,11 +488,10 @@ ng e2e
 ## Known Limitations & Assumptions
 
 1. **Dividend Dates**: Must fall strictly between start and expiration (not inclusive of expiration)
-2. **European Dividends**: Only considered if ≥5 dividends scheduled (per reference implementation)
-3. **American Early Exercise**: Optimal stopping not guaranteed for all path combinations (Longstaff-Schwartz is biased low)
-4. **Asian Averaging**: Equal weighting of all fixings; no scheduled vs. actual date adjustments
-5. **Greeks Calculation**: Numerical differences for some option types; analytical only for vanilla European
-6. **Time Convention**: Assumes 365-day year (not business day calendar)
+2**American Early Exercise**: Optimal stopping not guaranteed for all path combinations (Longstaff-Schwartz is biased low)
+3**Asian Averaging**: Equal weighting of all fixings; no scheduled vs. actual date adjustments
+4**Greeks Calculation**: Numerical differences for some option types; analytical only for vanilla European5
+5**Time Convention**: Assumes 365-day year (not business day calendar)
 
 ---
 
