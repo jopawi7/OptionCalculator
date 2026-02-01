@@ -202,7 +202,6 @@ def ask_until_valid_amount(prompt):
         except ValueError:
             print("Invalid number. Please try again.")
 
-
 #TODO - Input of dividend prompting
 #Ask for discrete dividend payments
 def input_dividends(start_date, expiration_date):
