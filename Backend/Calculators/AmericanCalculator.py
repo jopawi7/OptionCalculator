@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Tuple
 from datetime import datetime
 import numpy as np
-from typing import Dict, Any, Tuple
 
 try:
     #Import for Frontend from current package (relative import)
